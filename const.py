@@ -1,7 +1,3 @@
-MODELS = {
-    "Qwen_llm": "Qwen/Qwen3-4B-Instruct-2507-FP8",
-    "Qwen_image_edit": "ovedrive/qwen-image-edit-4bit"
-}
+import os
 
-
-BASE_DIR = "models"
+ROOT_PATH_MODELS = os.path.join(os.getcwd(), "models")

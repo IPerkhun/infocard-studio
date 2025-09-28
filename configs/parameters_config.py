@@ -4,8 +4,6 @@ from typing import Optional
 
 @dataclass
 class ImageEditConfig:
-    prompt: str = "draw as if they are holding a bottle of beer and smoking cigarettes"
-
     num_inference_steps: int = 20
 
     true_cfg_scale: float = 4.0
