@@ -1,18 +1,60 @@
-PROMPT_GENERATE_IMAGE = (
-    "You are given photos of the SAME kitchenware item (such as a cup, mug, plate, pot, pan, kettle, etc.), "
-    "captured from different angles (for example: top view, side view, 3/4 view, close-up). "
-    "For each input photo, keep the original angle, shape, proportions and perspective of the item exactly as in the input photo. "
-    "Do NOT redraw or distort the item — only replace the background. "
+PROMPT_GENERATE_IMAGE = """
+Вам предоставлены вырезанные изображения ОДНОГО и ТОГО ЖЕ предмета кухонной утвари — {product_name} —
+с прозрачным фоном.
+Сохраните исходный угол, форму, пропорции, перспективу и материал предмета точно так же, как на каждом исходном изображении.
+НЕ перерисовывайте и не искажайте объект — просто поместите его в новую сцену.
+Разместите предмет в реалистичной обстановке кухни: на столешницах (деревянных, мраморных или плиточных),
+рядом с плитами, раковинами, кухонной утварью, шкафами, фартуком, кранами и под естественным освещением.
+Используйте мягкий естественный свет с реалистичными тенями, чтобы предмет выглядел естественно вписанным в сцену.
+Убедитесь, что на каждом сгенерированном изображении используется немного другой, но реалистичный фон кухни (разные материалы, планировка, освещение), при этом сохраняя четкость изображения кухонной обстановки.
+Сохраняйте объект в резком фокусе; можно использовать небольшую глубину резкости, чтобы фон выглядел слегка смягченным, но реалистичным.
+Избегайте Добавление людей, текста, логотипов, водяных знаков, случайных дополнительных объектов, отражений, размытия, искажений, ореолов или артефактов.
+Результат должен выглядеть как высококачественные, реалистичные фотографии одного и того же предмета, естественно размещенного в различных кухонных интерьерах.
+"""
 
-    "Place the item naturally in a realistic kitchen environment. "
-    "For example, put it on a wooden or marble countertop, on a dining table, on a stove, near a sink, or on a cutting board. "
-    "Ensure that the background always belongs to a kitchen scene: counters, stove, oven, cabinets, utensils, tiles, natural kitchen lighting. "
-    "Each generated image should have a slightly different but still realistic kitchen background "
-    "so that all images do not look identical. "
-
-    "Make the images look like high-quality product photos: sharp, clear, with realistic lighting and soft natural shadows. "
-    "Keep the focus on the kitchenware item. "
-    "Avoid adding people, text, watermarks, or brand logos. "
-    "Do not change the camera angle or the shape of the item. "
-    "The goal is to create a set of consistent, realistic kitchen-scene photos of the same item, each matching the original input angle."
+PROMPT_GENERATE_CHARACTERISTICS = (
+    "Ты — эксперт по описанию товаров для маркетплейсов.\n\n"
+    "Тебе даются данные о товаре:\n"
+    "- Название товара: {product_name}\n"
+    "- Строка с характеристиками: {product_properties}\n\n"
+    "Твоя задача:\n"
+    "1. Проанализировать название и характеристики товара.\n"
+    "2. Определить:\n"
+    "   - Заголовок (title): общее название товара.\n"
+    "   - Подзаголовок (subtitle): уточнение, например серия, модель или ключевая особенность.\n"
+    "   - Список уникальных торговых предложений (utp): ровно 8 коротких и уникальных пунктов с важными свойствами.\n\n"
+    "Формат ответа должен строго соответствовать Pydantic-схемам:\n\n"
+    "class UTPItem(BaseModel):\n"
+    "    number: int — порядковый номер пункта (от 1 до 8)\n"
+    "    text: str — текст характеристики\n\n"
+    "class OutputLLM(BaseModel):\n"
+    "    title: str — заголовок, например название товара\n"
+    "    subtitle: str — подзаголовок, например серия или модель\n"
+    "    utp: List[UTPItem] — список из ровно 8 характеристик товара\n\n"
+    "Верни результат строго в JSON-формате без лишнего текста до и после:\n"
+    "{{\n"
+    '  "title": "…",\n'
+    '  "subtitle": "…",\n'
+    '  "utp": [\n'
+    '    {{"number": 1, "text": "…"}},\n'
+    '    {{"number": 2, "text": "…"}},\n'
+    '    {{"number": 3, "text": "…"}},\n'
+    '    {{"number": 4, "text": "…"}},\n'
+    '    {{"number": 5, "text": "…"}},\n'
+    '    {{"number": 6, "text": "…"}},\n'
+    '    {{"number": 7, "text": "…"}},\n'
+    '    {{"number": 8, "text": "…"}}\n'
+    "  ]\n"
+    "}}\n\n"
+    "Требования:\n"
+    "- Обязательно вернуть ровно 8 элементов в списке utp.\n"
+    "- Не добавляй лишнего текста вне JSON.\n"
+    "- Характеристики (utp.text) должны быть краткими (5–12 слов), информативными и ценными для покупателя.\n"
+    "- Не дублируй информацию из названия товара в utp, если это не добавляет новой пользы.\n"
+    "- Не используй bullet points, кавычки внутри текста или спецсимволы.\n"
+    "- Нумерация utp должна быть последовательной и начинаться с 1.\n"
+    "- Если данных недостаточно, всё равно придумай ровно 8 осмысленных характеристик, логично связанных с товаром.\n"
 )
+
+
+
