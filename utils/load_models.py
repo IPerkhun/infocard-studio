@@ -1,31 +1,38 @@
 import os
-
 from huggingface_hub import snapshot_download
 
-from const import ROOT_PATH_MODELS
-
 MODELS = {
-    "qwen_llm": "Qwen/Qwen3-4B-Instruct-2507-FP8",
-    "qwen_image_edit": "ovedrive/qwen-image-edit-4bit"
+    "qwen_llm": "Qwen/Qwen3-4B-Instruct-2507-FP8",           
+    "qwen_image_edit": "ovedrive/qwen-image-edit-4bit",      
+    "qwen_detect_product": "Qwen/Qwen2.5-VL-7B-Instruct-AWQ"     
 }
 
-def download_model(model_name: str, target_dir: str):
-    print(f"Скачиваем модель {model_name} в {target_dir}")
+
+def download_model(repo_id: str, target_dir: str):
+    print(f"🚀 Скачиваем модель {repo_id} в {target_dir}")
     snapshot_download(
-        repo_id=model_name,
+        repo_id=repo_id,
         local_dir=target_dir,
-        local_dir_use_symlinks=False
+        local_dir_use_symlinks=False,
+        ignore_patterns=["*.msgpack"] 
     )
-    print(f"✅ Модель '{model_name}' скачана в: {target_dir}")
+    print(f"✅ Модель '{repo_id}' готова в: {target_dir}")
+
 
 def main():
-    os.makedirs(ROOT_PATH_MODELS, exist_ok=True)
-    print(f"📁 Папка '{ROOT_PATH_MODELS}' готова.")
+    os.makedirs("models", exist_ok=True)
+    print(f"📁 Папка для моделей: models")
 
     for folder, repo_id in MODELS.items():
-        target_path = os.path.join(ROOT_PATH_MODELS, folder)
-        os.makedirs(target_path, exist_ok=True)  
+        target_path = os.path.join("models", folder)
+
+        if os.path.exists(target_path) and os.listdir(target_path):
+            print(f"ℹ️  Модель '{repo_id}' уже скачана в {target_path}. Пропускаем.")
+            continue
+
+        os.makedirs(target_path, exist_ok=True)
         download_model(repo_id, target_path)
+
 
 if __name__ == "__main__":
     main()

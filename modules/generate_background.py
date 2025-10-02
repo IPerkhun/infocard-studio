@@ -1,3 +1,4 @@
+import base64
 from io import BytesIO
 from typing import Dict, List
 
@@ -52,3 +53,15 @@ class BackgroundGeneration:
                 out_images.append(result.images[0])
 
         return out_images
+
+    def get_images(self, data: Dict) -> List[str]:
+        out_images = self.generate_images(data)
+        encoded_images = []
+
+        for img in out_images:
+            buffered = BytesIO()
+            img.save(buffered, format="PNG")  
+            encoded_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+            encoded_images.append(encoded_str)
+
+        return encoded_images
