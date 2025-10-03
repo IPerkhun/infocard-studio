@@ -1,4 +1,3 @@
-# %%
 from langgraph.graph import StateGraph, END
 
 from schemas.schema import (
@@ -131,8 +130,10 @@ class ProductCardGeneration:
         graph.add_node("generate_characteristics", self._generate_characteristics)
         graph.add_node("generate_headers", self._generate_headers)
         graph.add_node("generate_specs", self._generate_specs)
-        graph.add_node("generate_description", self._generate_description)  
+        graph.add_node("generate_description", self._generate_description) 
+
         graph.set_entry_point("detector_product")
+        
         graph.add_edge("detector_product", "background_generation")
         graph.add_edge("background_generation", "generate_characteristics")
         graph.add_edge("generate_characteristics", "generate_headers")
