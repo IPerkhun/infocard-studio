@@ -1,98 +1,147 @@
-#%%
+# %%
 from langgraph.graph import StateGraph, END
-from schemas.schema import AgentState, OutputLLM, OutputHeaders
-from models_init.llm_manager import LLMManager
-from tools.agent_tools import (
-    generate_images_tool,
-    generate_characteristics_tool,
-    generate_headers_tool,
+
+from schemas.schema import (
+    AgentState,
+    OutputLLM,
+    ImageGenOutput,
+    SpecsOutput,
+    HeadersOutput,
+    DetectProductOutput,
+    DescriptionOutput,
 )
-from pydantic import ValidationError
+from models_init.llm_manager import LLMManager
+from tools.agent_tools import generate_images_tool, detect_product_tool
+from prompts.prompt import (
+    PROMPT_DETECT_LMS,
+    PROMPT_GENERATE_SPECS,
+    PROMPT_GENERATE_HEADERS,
+    PROMPT_GENERATE_CHARACTERISTICS,
+    PROMPT_GENERATE_DESCRIPTION,
+)
 
 
 class ProductCardGeneration:
     def __init__(self):
-        self.llm = LLMManager(local_llm=True).client
+        self.llm = LLMManager().llm
         self.graph = self._build_graph()
 
     def _detector_product(self, state: AgentState) -> AgentState:
-        # пока пустой детектор (проходим дальше)
+        image_url = state.input_data.get("product_photos", [None])[0]
+        raw_text = detect_product_tool.invoke(
+            {"image_url": image_url, "question": PROMPT_DETECT_LMS}
+        )
+
+        so_chain = self.llm.with_structured_output(
+            DetectProductOutput, strict=True
+        ).with_config({"run_name": "detect_lms"})
+
+        det: DetectProductOutput = so_chain.invoke(raw_text)
+        state.result["detected_product"] = det.model_dump()
+
         return state
 
-    def _generate_images_node(self, state: AgentState) -> AgentState:
-        img_result = generate_images_tool.invoke(dict(state.input_data))
-        state.result.update({
-            "job_id": img_result.job_id,
-            "generated_images": img_result.generated_images,
-        })
+    def _background_generation(self, state: AgentState) -> AgentState:
+        photos = state.input_data.get("product_photos", [])
+        img_out: ImageGenOutput = generate_images_tool.invoke(
+            {"product_photos": photos}
+        )
+        state.result["generated_images"] = img_out.generated_images
+
         return state
 
-    def _generate_characteristics_node(self, state: AgentState) -> AgentState:
-        raw_result = generate_characteristics_tool.invoke(dict(state.input_data))
+    def _generate_characteristics(self, state: AgentState) -> AgentState:
+        product_name = state.input_data["product_name"]
+        product_props = state.input_data["product_properties"]
 
-        if isinstance(raw_result, OutputLLM):
-            parsed = raw_result
-        else:
-            try:
-                parsed = OutputLLM.model_validate_json(raw_result)
-            except ValidationError as e:
-                raise ValueError(f"Не удалось распарсить ответ модели: {e}")
+        prompt = PROMPT_GENERATE_CHARACTERISTICS.format(
+            product_name=product_name,
+            product_properties=product_props,
+        )
 
-        state.result["generated_characteristics"] = parsed.model_dump()
+        so_chain = self.llm.with_structured_output(OutputLLM, strict=True).with_config(
+            {"run_name": "generate_characteristics"}
+        )
+
+        out: OutputLLM = so_chain.invoke(prompt)
+        state.result["characteristics"] = out.model_dump()
+
         return state
 
-    def _generate_headers_node(self, state: AgentState) -> AgentState:
-        title = state.result["generated_characteristics"]["title"]
-        headers_result = generate_headers_tool.invoke({"title": title})
+    def _generate_headers(self, state: AgentState) -> AgentState:
+        title = state.result["characteristics"]["title"]
 
-        if isinstance(headers_result, OutputHeaders):
-            headers = headers_result.model_dump()
-        else:
-            headers = headers_result
+        prompt = PROMPT_GENERATE_HEADERS.format(title=title)
 
-        state.result["generated_headers"] = headers
+        so_chain = self.llm.with_structured_output(
+            HeadersOutput, strict=True
+        ).with_config({"run_name": "generate_headers_so"})
+
+        out: HeadersOutput = so_chain.invoke(prompt)
+        state.result["headers"] = out.headers
+
         return state
 
-    # 🔹 новая пустая нода для описания товара
-    def _generate_description_node(self, state: AgentState) -> AgentState:
-        # тут позже подключим тул/LLM; пока — плейсхолдер
-        state.result["generated_description"] = ""
+    def _generate_specs(self, state: AgentState) -> AgentState:
+        product_name = state.input_data["product_name"]
+        product_properties = state.input_data["product_properties"]
+
+        prompt = PROMPT_GENERATE_SPECS.format(
+            product_name=product_name,
+            product_properties=product_properties,
+        )
+
+        so_chain = self.llm.with_structured_output(
+            SpecsOutput, strict=True
+        ).with_config({"run_name": "generate_specs_so"})
+
+        out: SpecsOutput = so_chain.invoke(prompt)
+        state.result["specs_text"] = out.text
+
+        return state
+
+    def _generate_description(self, state: AgentState) -> AgentState:
+        ch = state.result["characteristics"]
+        title = ch.get("title", "")
+        subtitle = ch.get("subtitle", "")
+        utp = ch.get("utp", [])
+        utp_lines = "\n".join(
+            [f"УТП {item.get('number')}: {item.get('text')}" for item in utp]
+        )
+        specs_text = state.result.get("specs_text", "")
+
+        prompt = PROMPT_GENERATE_DESCRIPTION.format(
+            title=title,
+            subtitle=subtitle,
+            utp_lines=utp_lines,
+            specs_text=specs_text,
+        )
+
+        so_chain = self.llm.with_structured_output(
+            DescriptionOutput, strict=True
+        ).with_config({"run_name": "generate_description_so"})
+        out: DescriptionOutput = so_chain.invoke(prompt)
+        state.result["description_text"] = out.text
         return state
 
     def _build_graph(self) -> StateGraph:
         graph = StateGraph(AgentState)
-
         graph.add_node("detector_product", self._detector_product)
-        graph.add_node("background_generation", self._generate_images_node)
-        graph.add_node("characteristics_generation", self._generate_characteristics_node)
-        graph.add_node("headers_generation", self._generate_headers_node)
-        graph.add_node("description_generation", self._generate_description_node)  # ← добавили
-
-        graph.add_edge("detector_product", "background_generation")
-        graph.add_edge("background_generation", "characteristics_generation")
-        graph.add_edge("characteristics_generation", "headers_generation")
-        graph.add_edge("headers_generation", "description_generation")              # ← вставили сюда
-        graph.add_edge("description_generation", END)
-
+        graph.add_node("background_generation", self._background_generation)
+        graph.add_node("generate_characteristics", self._generate_characteristics)
+        graph.add_node("generate_headers", self._generate_headers)
+        graph.add_node("generate_specs", self._generate_specs)
+        graph.add_node("generate_description", self._generate_description)  
         graph.set_entry_point("detector_product")
+        graph.add_edge("detector_product", "background_generation")
+        graph.add_edge("background_generation", "generate_characteristics")
+        graph.add_edge("generate_characteristics", "generate_headers")
+        graph.add_edge("generate_headers", "generate_specs")
+        graph.add_edge("generate_specs", "generate_description")           
+        graph.add_edge("generate_description", END)                       
+
         return graph.compile()
 
-    def run(self, input_data: dict) -> AgentState:
-        init_state = AgentState(input_data=input_data)
-        return self.graph.invoke(init_state)
-
-# %%
-temp = ProductCardGeneration()
-# %%
-temp.run(
-    input_data={
-        "job_id": "1500cffa-5c2b-47b3-b879-3b6689fde248",
-        "product_sku": "293243771",
-        "product_name": "Сковорода 24 см Current с антипригарным покрытием",
-        "product_properties": "Цвет: красный. Количество сковород в наборе: 1 шт. Для индукционных плит: нет. Количество предметов в упаковке: 1 шт. Материал ручки: бакелит. Материал посуды: алюминий. Внутреннее покрытие: антипригарное. Тип сковороды: классическая. Диаметр крышки: 26 см. Диаметр дна сковороды: 20.8 см. Высота борта сковороды: 4.9 см. Особенности: индикация нагрева; фиксированная ручка; антипригарное покрытие Titanium. Тип крышки: без крышки. Форма изделия: круглая. Страна производства: Россия. Комплектация: сковорода 26 см – 1 шт. Глубина предмета: 44.7 см. Диаметр предмета: 26 см. Ширина предмета: 26.4 см. Вес без упаковки: 0.72 кг. Вес с упаковкой: 0.75 кг. Длина упаковки: 47 см. Высота упаковки: 9 см. Ширина упаковки: 31 см.",
-        "product_photos": [
-            "https://goods-photos.static1-sima-land.com/items/20392/0/1600.jpg",
-        ],
-    }
-)
-# %%
+    def run(self, input_data) -> AgentState:
+        state = AgentState(input_data=input_data)
+        return self.graph.invoke(state)

@@ -1,48 +1,41 @@
-# import io
-# import requests
-# import torch
-# from PIL import Image
-# from models_init import 
+import io, requests, torch
+from PIL import Image
+from models_init.load_qwen_vl import QwenVLModel
 
-# class ProductDetector:
-#     def __init__(self):
-#         self.processor = qwen_pipeline.det_processor
-#         self.model = qwen_pipeline.det_model
-#         self.device = self.model.device
 
-#     def predict(self, data: dict) -> str:
-#         url = data["product_photos"][0]
-#         img = Image.open(io.BytesIO(requests.get(url).content)).convert("RGB")
+class QwenVLDetector:
+    def __init__(self):
+        self.device = "cuda:0"
+        self.vl_model, self.processor = QwenVLModel().get_model()
+        self.vl_model.eval()
 
-#         instruction = "Определи, что изображено на фото."
+    def _vl_ask(self, image: Image.Image, question: str) -> str:
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image", "image": image},
+                    {"type": "text", "text": question},
+                ],
+            }
+        ]
+        text = self.processor.apply_chat_template(
+            messages, add_generation_prompt=True, tokenize=False
+        )
+        inputs = self.processor(text=[text], images=[image], return_tensors="pt").to(
+            self.device
+        )
 
-#         messages = [
-#             {
-#                 "role": "user",
-#                 "content": [
-#                     {"type": "image", "image": img},
-#                     {"type": "text", "text": instruction},
-#                 ],
-#             }
-#         ]
+        with torch.no_grad():
+            output_ids = self.vl_model.generate(
+                **inputs, max_new_tokens=16, do_sample=False, temperature=0.0
+            )
+        return self.processor.batch_decode(output_ids, skip_special_tokens=True)[
+            0
+        ].strip()
 
-#         # шаблон чата
-#         text = self.processor.apply_chat_template(
-#             messages, add_generation_prompt=True, tokenize=False
-#         )
-
-#         inputs = self.processor(
-#             text=[text],
-#             images=[img],
-#             return_tensors="pt"
-#         ).to(self.device)
-
-#         # генерация
-#         with torch.no_grad():
-#             out_ids = self.model.generate(
-#                 **inputs,
-#                 max_new_tokens=32,
-#             )
-
-#         answer = self.processor.batch_decode(out_ids, skip_special_tokens=True)[0]
-#         return answer.strip()
+    def predict_from_url(self, url: str, question: str) -> str:
+        img = Image.open(io.BytesIO(requests.get(url, timeout=20).content)).convert(
+            "RGB"
+        )
+        return self._vl_ask(img, question)

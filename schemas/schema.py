@@ -1,27 +1,61 @@
-from typing import Annotated, List, Optional, Dict, Any
+from typing import Annotated, Any, Dict, List, Literal, Optional
+
 from pydantic import BaseModel, Field
 
 
+class AgentState(BaseModel):
+    input_data: Dict
+    result: Dict[str, Any] = Field(default_factory=dict)
+
+
+class DetectProductInput(BaseModel):
+    image_url: str = Field(..., description="URL изображения для анализа")
+    question: str = Field(..., description="Вопрос, который нужно задать модели")
+
+
+class DetectProductOutput(BaseModel):
+    label: Literal["L", "M", "S"] = Field(
+        ..., description="Класс габарита посуды: L/M/S"
+    )
+
+
 class ImageGenInput(BaseModel):
-    job_id: str = Field(..., description="ID задачи")
-    product_name: str = Field(..., description="Название товара")
-    product_photos: List[str] = Field(..., description="Список ссылок на фото товара")
+    product_photos: List[str]
+
 
 class ImageGenOutput(BaseModel):
-    job_id: str
-    generated_images: List[str] = Field(..., description="Base64 изображений")
+    generated_images: List[str]
 
-class OutputHeaders(BaseModel):
-    headers: List[str]
+
+class HeadersOutput(BaseModel):
+    headers: List[str] = Field(
+        ..., min_items=4, max_items=4, description="Ровно 4 заголовка"
+    )
+
 
 class UTPItem(BaseModel):
-    number: Annotated[int, Field(ge=1, le=8, description="Порядковый номер УТП от 1 до 8")]
+    number: Annotated[
+        int, Field(ge=1, le=8, description="Порядковый номер УТП от 1 до 8")
+    ]
     text: str = Field(..., description="Текст характеристики УТП")
+
 
 class OutputLLM(BaseModel):
     title: str = Field(..., description="Заголовок, например название товара")
     subtitle: str = Field(..., description="Подзаголовок, например серия или модель")
-    utp: Annotated[List[UTPItem], Field(min_length=8, max_length=8, description="Ровно 8 УТП")]
+    utp: Annotated[
+        List[UTPItem], Field(min_length=8, max_length=8, description="Ровно 8 УТП")
+    ]
+
+
+class SpecsOutput(BaseModel):
+    text: str = Field(
+        ..., description="Готовый текстовый блок с характеристиками товара"
+    )
+
+class DescriptionOutput(BaseModel):
+    text: str = Field(...)
+
 
 class ProductData(BaseModel):
     job_id: str
@@ -33,9 +67,4 @@ class ProductData(BaseModel):
 
 class ResponseFormat(BaseModel):
     job_id: str
-    generated_images: List[str] 
-
-
-class AgentState(BaseModel):
-    input_data: Dict
-    result: Dict[str, Any] = Field(default_factory=dict)
+    generated_images: List[str]
