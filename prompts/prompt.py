@@ -36,19 +36,21 @@ PROMPT_DETECT_LMS = """
 """.strip()
 
 
-PROMPT_GENERATE_IMAGE = """
-Тебе предоставлен вырезанные изображения ОДНОГО и ТОГО ЖЕ предмета кухонной утвари — {product_name} —
-с прозрачным фоном.
-Сохрани исходный угол, форму, пропорции, перспективу и материал предмета точно так же, как на каждом исходном изображении.
-НЕ перерисовывай и не искажайте объект — просто поместите его в новую сцену.
-Размести предмет в реалистичной обстановке кухни: на столешницах (деревянных, мраморных или плиточных),
-рядом с плитами, раковинами, кухонной утварью, шкафами, фартуком, кранами и под естественным освещением.
-Используй мягкий естественный свет с реалистичными тенями, чтобы предмет выглядел естественно вписанным в сцену.
-Убедись, что на каждом сгенерированном изображении используется немного другой, но реалистичный фон кухни (разные материалы, планировка, освещение), при этом сохраняя четкость изображения кухонной обстановки.
-Сохраняй объект в резком фокусе; можно использовать небольшую глубину резкости, чтобы фон выглядел слегка смягченным, но реалистичным.
-Избегай Добавление людей, текста, логотипов, водяных знаков, случайных дополнительных объектов, отражений, размытия, искажений, ореолов или артефактов.
-Результат должен выглядеть как высококачественные, реалистичные фотографии одного и того же предмета, естественно размещенного в различных кухонных интерьерах.
-"""
+PROMPT_GENERATE_IMAGE = (
+    "You are given a cut-out image of a kitchenware item ({product_name}). "
+    "Your task is ONLY to generate a realistic kitchen scene AROUND the given item. "
+    "Absolutely DO NOT modify, redraw, rotate, scale, move or cover the provided item in any way. "
+    "The original object must appear in the final image exactly as it was provided. "
+    "Add a natural-looking kitchen background such as countertop, sink, stove, cabinets, utensils, "
+    "or soft daylight from a window. "
+    "Make the background blend naturally with the object, with realistic lighting, subtle shadows, "
+    "and natural photographic depth of field. "
+    "Do NOT add text, logos, or any extra props on top of the object. "
+    "Focus only on completing the missing background so the item looks as if it was originally photographed "
+    "in a real kitchen environment."
+)
+
+
 
 PROMPT_GENERATE_HEADERS = """
 На основании заголовка ниже придумай 1–4 похожих заголовка,

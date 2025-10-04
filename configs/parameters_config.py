@@ -6,7 +6,7 @@ from typing import Optional
 class ImageEditConfig:
     num_inference_steps: int = 20
 
-    true_cfg_scale: float = 4.0
+    true_cfg_scale: float = 3.5
     guidance_rescale: Optional[float] = None
 
     seed: Optional[int] = -1
