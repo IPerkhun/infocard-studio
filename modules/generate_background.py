@@ -39,7 +39,6 @@ class BackgroundGeneration:
         self.qwen_pipeline = CustomEditQwenPipeline()
 
     def _fetch_image_rgb(self, url: str) -> Image.Image:
-        """Скачиваем оригинальное изображение по URL"""
         resp = requests.get(url, timeout=30)
         resp.raise_for_status()
         return Image.open(io.BytesIO(resp.content)).convert("RGB")
@@ -50,9 +49,9 @@ class BackgroundGeneration:
         with torch.no_grad():
             pred = rmbg_model(inp)[-1].sigmoid().cpu()
 
-        mask = pred[0].squeeze()              
+        mask = pred[0].squeeze()               
         mask_pil = transforms.ToPILImage()(mask)
-        mask_pil = mask_pil.resize(img.size)   
+        mask_pil = mask_pil.resize(img.size)     
 
         rgba = img.convert("RGBA")
         rgba.putalpha(mask_pil)
@@ -63,7 +62,7 @@ class BackgroundGeneration:
         for u in data.get("product_photos", []):
             img = self._fetch_image_rgb(u)
             img = self._remove_background_rmbg20(img)
-            img = img.convert("RGB")   #
+            img = img.convert("RGB")   
             images.append(img)
         return images
 
@@ -81,7 +80,7 @@ class BackgroundGeneration:
                     image=img,
                     prompt=prompt,
                     num_inference_steps=self.config.num_inference_steps,
-                    true_cfg_scale=self.config.true_cfg_scale,ы
+                    true_cfg_scale=self.config.true_cfg_scale,
                 )
                 out_images.append(result.images[0])
 
@@ -108,9 +107,9 @@ out_images, _ = temp.get_images(
         "product_name": "Кастрюля с крышкой из нержавеющей стали Доляна «Классика», 1,5 л, d=17,5 см",
         "product_properties": "|Цвет:Серебристый|Диаметр, см:17.5|Объём, л:1.5|Высота стенки, см:8.5|Крышка:Да|Материал крышки:Стекло|Материал:Нержавеющая сталь|Тип покрытия:Без покрытия|Тип плиты:Для электрической плиты|Тип плиты:Для газовой плиты|Тип плиты:Для стеклокерамической плиты|Тип плиты:Для галогенной плиты|Капсульное дно:Да|Можно мыть в посудомоечной машине:Да",
         "product_photos": [
-            # "https://goods-photos.static1-sima-land.com/items/20392/0/1600.jpg",
+            "https://goods-photos.static1-sima-land.com/items/20392/0/1600.jpg",
             # "https://goods-photos.static1-sima-land.com/items/20392/1/1600.jpg",
-            "https://goods-photos.static1-sima-land.com/items/20392/2/1600.jpg",
+            # "https://goods-photos.static1-sima-land.com/items/20392/2/1600.jpg",
             # "https://goods-photos.static1-sima-land.com/items/20392/11/1600.jpg",
             # "https://goods-photos.static1-sima-land.com/items/20392/12/1600.jpg",
             # "https://goods-photos.static1-sima-land.com/items/20392/13/1600.jpg",
