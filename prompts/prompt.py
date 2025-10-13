@@ -23,31 +23,57 @@ job_id, product_name, product_properties, product_photos),
 
 
 PROMPT_DETECT_LMS = """
-Ты приводишь ответ к строгой схеме JSON: { "label": "<L|M|S>" }.
+Ты приводишь ответ к строгой схеме JSON: { "label": "<L|M|S|NONE>" }.
 
 Категории:
-- L (Large): крупная посуда — сковороды, кастрюли, жаровни, гусятницы, воки, казаны, сотейники 26–32 см и крупнее.
-- M (Medium): средняя посуда — тарелки (мелкие/глубокие/десертные/салатники), миски, блюдца, формы для запекания среднего размера, крышки/сковороды 20–24 см.
-- S (Small): малая посуда и питьё — стаканы, кружки, чашки, рюмки, креманки, пиалы, маленькие соусники, рамкины, крышки < 18–20 см.
+- L (Large): крупная посуда — сковороды, кастрюли.
+- M (Medium): средняя посуда — тарелки, миски, блюдца.
+- S (Small): малая посуда и питьё — стаканы, кружки, чашки, рюмки.
+- NONE: если на фото нет посуды, а изображён текст, коробка, упаковка, человек, фон или нерелевантный объект.
 
-Правила:
-- Прими на вход произвольный «сырой» ответ (одно слово/фраза/символ).
-- Верни только JSON строго по схеме (без текста до/после).
+Верни только JSON строго по схеме (без текста до/после).
 """.strip()
 
 
-PROMPT_GENERATE_IMAGE = (
-    "You are given a cut-out image of a kitchenware item ({product_name}). "
+
+PROMPT_GENERATE_IMAGE_L = (
+    "You are given a cut-out image of a large kitchenware item ({product_name}). "
     "Your task is ONLY to generate a realistic kitchen scene AROUND the given item. "
-    "Absolutely DO NOT modify, redraw, rotate, scale, move or cover the provided item in any way. "
-    "The original object must appear in the final image exactly as it was provided. "
-    "Add a natural-looking kitchen background such as countertop, sink, stove, cabinets, utensils, "
-    "or soft daylight from a window. "
-    "Make the background blend naturally with the object, with realistic lighting, subtle shadows, "
-    "and natural photographic depth of field. "
-    "Do NOT add text, logos, or any extra props on top of the object. "
-    "Focus only on completing the missing background so the item looks as if it was originally photographed "
-    "in a real kitchen environment."
+    "Absolutely DO NOT modify, redraw, rotate, scale, move, duplicate, reflect, or cover the provided item in any way. "
+    "The original object must appear exactly as provided. "
+    "Create a natural kitchen background such as a stovetop or range, backsplash, countertop, cabinets, hood, "
+    "and subtle utensil context nearby (e.g., ladle on a hook, pot holders) WITHOUT touching or overlapping the item. "
+    "Match perspective and lighting; add soft shadows cast onto the background only; use natural photographic depth of field. "
+    "Do NOT add text, logos, stickers, labels, food, steam, liquids, or any props ON the object itself. "
+    "Your sole goal: complete the missing environment so the cookware looks originally photographed in a real kitchen."
+)
+
+PROMPT_GENERATE_IMAGE_M = (
+    "You are given a cut-out image of a medium kitchenware item ({product_name}) such as a plate, bowl, or saucer. "
+    "Your task is to generate a realistic dining or countertop scene AROUND the given item. "
+    "Do NOT modify, redraw, rotate, scale, move, duplicate, reflect, or cover the provided item in any way. "
+    "The original object must remain exactly as provided. "
+    "Build a natural setting like a wooden dining table, drying rack, open shelf, placemat, folded napkin, "
+    "and nearby flatware placed so it does NOT overlap the item. "
+    "Match the object’s perspective and lighting; add subtle, physically plausible shadows onto the background only; "
+    "use natural photographic depth of field. "
+    "Optionally, you may add a small amount of realistic food on or inside the dish, "
+    "such as a croissant, fruit, salad, soup, or breakfast serving — it must look appetizing, natural, and true to scale. "
+    "Do NOT add text, logos, stickers, labels, or unrealistic decorations. "
+    "Ensure the final composition looks like a professional food photography scene in a real kitchen or dining environment."
+)
+
+
+PROMPT_GENERATE_IMAGE_S = (
+    "You are given a cut-out image of a small kitchenware or drinkware item ({product_name}) such as a glass, mug, cup, or shot glass. "
+    "Your task is ONLY to generate a realistic tabletop or coffee-station scene AROUND the given item. "
+    "Absolutely DO NOT modify, redraw, rotate, scale, move, duplicate, reflect, fill, or cover the provided item in any way. "
+    "The original object must remain exactly as provided and MUST stay empty if it is a vessel. "
+    "Create a natural context like a café-style table, coaster under (not overlapping edges), coffee machine or kettle in the background, "
+    "shelf with jars, or window light—ensuring nothing touches or overlaps the object. "
+    "Match perspective and lighting; add subtle, plausible shadows cast onto the background only; use natural photographic depth of field. "
+    "Do NOT add text, logos, stickers, labels, liquids, foam, ice, or any props ON the object. "
+    "Your job is only to complete the background so the item appears originally photographed in a real setting."
 )
 
 

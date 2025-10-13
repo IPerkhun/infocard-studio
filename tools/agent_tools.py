@@ -20,7 +20,7 @@ def detect_product_tool(image_url: str, question: str) -> str:
 
 
 @tool("background_generation", args_schema=ImageGenInput)
-def generate_images_tool(product_photos: List[str]) -> ImageGenOutput:
+def generate_images_tool(product_photos: List[str], prompt) -> ImageGenOutput:
     """Генерирует изображение на корректном фоне"""
-    images = bg_generator.get_images({"product_photos": product_photos})
+    images = bg_generator.get_images({"product_photos": product_photos}, prompt=prompt)
     return ImageGenOutput(generated_images=images)

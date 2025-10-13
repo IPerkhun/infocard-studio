@@ -14,13 +14,14 @@ class DetectProductInput(BaseModel):
 
 
 class DetectProductOutput(BaseModel):
-    label: Literal["L", "M", "S"] = Field(
-        ..., description="Класс габарита посуды: L/M/S"
+    label: Literal["L", "M", "S", "NONE"] = Field(
+        ..., description="Класс габарита посуды: L/M/S или NONE, если объект не является посудой"
     )
 
 
 class ImageGenInput(BaseModel):
     product_photos: List[str]
+    prompt: str
 
 
 class ImageGenOutput(BaseModel):
