@@ -35,47 +35,54 @@ PROMPT_DETECT_LMS = """
 """.strip()
 
 
-
 PROMPT_GENERATE_IMAGE_L = (
-    "You are given a cut-out image of a large kitchenware item ({product_name}). "
-    "Your task is ONLY to generate a realistic kitchen scene AROUND the given item. "
-    "Absolutely DO NOT modify, redraw, rotate, scale, move, duplicate, reflect, or cover the provided item in any way. "
-    "The original object must appear exactly as provided. "
-    "Create a natural kitchen background such as a stovetop or range, backsplash, countertop, cabinets, hood, "
-    "and subtle utensil context nearby (e.g., ladle on a hook, pot holders) WITHOUT touching or overlapping the item. "
-    "Match perspective and lighting; add soft shadows cast onto the background only; use natural photographic depth of field. "
-    "Do NOT add text, logos, stickers, labels, food, steam, liquids, or any props ON the object itself. "
-    "Your sole goal: complete the missing environment so the cookware looks originally photographed in a real kitchen."
+    "Вам предоставлено изображение большого кухонного предмета ({product_name}). "
+    "Ваша задача - создать реалистичную кухонную обстановку ВОКРУГ данного предмета"
+    "Ни в коем случае НЕ изменяйте, не перерисовывайте, не поворачивайте, не масштабируйте, не перемещайте, не дублируйте, не отражайте и не закрывайте предоставленный объект каким-либо образом."
+    "Исходный объект должен выглядеть точно так, как указано"
+    "Создайте естественный фон кухни, например, плиту или варочную панель, защитную панель, столешницу, шкафы, вытяжку"
+    "и расположите посуду поблизости (например, половник на крючке, прихватки) , НЕ касаясь и не перекрывая друг друга"
+    "Сочетайте перспективу и освещение; добавляйте мягкие тени, отбрасываемые только на фон; используйте естественную фотографическую глубину резкости."
+    "НЕ добавляйте текст, логотипы, наклейки, этикетки, продукты питания, пар, жидкости или какой-либо реквизит на сам объект"
+    "Ваша единственная цель: дополнить недостающую обстановку, чтобы посуда выглядела оригинально на фотографиях настоящей кухни"
 )
 
 PROMPT_GENERATE_IMAGE_M = (
-    "You are given a cut-out image of a medium kitchenware item ({product_name}) such as a plate, bowl, or saucer. "
-    "Your task is to generate a realistic dining or countertop scene AROUND the given item. "
-    "Do NOT modify, redraw, rotate, scale, move, duplicate, reflect, or cover the provided item in any way. "
-    "The original object must remain exactly as provided. "
-    "Build a natural setting like a wooden dining table, drying rack, open shelf, placemat, folded napkin, "
-    "and nearby flatware placed so it does NOT overlap the item. "
-    "Match the object’s perspective and lighting; add subtle, physically plausible shadows onto the background only; "
-    "use natural photographic depth of field. "
-    "Optionally, you may add a small amount of realistic food on or inside the dish, "
-    "such as a croissant, fruit, salad, soup, or breakfast serving — it must look appetizing, natural, and true to scale. "
-    "Do NOT add text, logos, stickers, labels, or unrealistic decorations. "
-    "Ensure the final composition looks like a professional food photography scene in a real kitchen or dining environment."
+    "Вам предоставляется изображение кухонного предмета среднего размера ({product_name}), такого как тарелка, миска или блюдце"
+    "Ваша задача - создать реалистичную обстановку столовой или рабочего стола ВОКРУГ данного предмета. "
+    "НЕ изменяйте, не перерисовывайте, не поворачивайте, не масштабируйте, не перемещайте, не дублируйте, не отражайте и не закрывайте предоставленный предмет каким-либо образом. "
+    "Исходный объект должен оставаться в точности таким, каким он был предоставлен"
+    "Создайте естественную обстановку, например, поставьте деревянный обеденный стол, сушилку, открытую полку, подставку для столовых приборов, сложенную салфетку"
+    "Расположите столовые приборы рядом, чтобы они не перекрывали блюдо"
+    "Соблюдайте ракурс и освещение объекта; добавляйте тонкие, физически правдоподобные тени только на фон"
+    "используйте естественную фотографическую глубину резкости"
+    "При желании вы можете добавить небольшое количество реалистичных продуктов на блюдо или внутрь него"
+    "например, круассан, фрукты, салат, суп или порция для завтрака — все это должно выглядеть аппетитно, натурально и соответствовать пропорциям"
+    "НЕ добавляйте текст, логотипы, наклейки"
 )
 
 
 PROMPT_GENERATE_IMAGE_S = (
-    "You are given a cut-out image of a small kitchenware or drinkware item ({product_name}) such as a glass, mug, cup, or shot glass. "
-    "Your task is ONLY to generate a realistic tabletop or coffee-station scene AROUND the given item. "
-    "Absolutely DO NOT modify, redraw, rotate, scale, move, duplicate, reflect, fill, or cover the provided item in any way. "
-    "The original object must remain exactly as provided and MUST stay empty if it is a vessel. "
-    "Create a natural context like a café-style table, coaster under (not overlapping edges), coffee machine or kettle in the background, "
-    "shelf with jars, or window light—ensuring nothing touches or overlaps the object. "
-    "Match perspective and lighting; add subtle, plausible shadows cast onto the background only; use natural photographic depth of field. "
-    "Do NOT add text, logos, stickers, labels, liquids, foam, ice, or any props ON the object. "
-    "Your job is only to complete the background so the item appears originally photographed in a real setting."
+    "Вам будет предоставлено изображение небольшого кухонного или питьевого предмета ({product_name}), такого как стакан, кружка, стаканчик или рюмочная"
+    "Ваша задача состоит только в том, чтобы создать реалистичную сцену на столе или в кофейне ВОКРУГ данного предмета."
+    "Ни в коем случае НЕ изменяйте, не перерисовывайте, не поворачивайте, не масштабируйте, не перемещайте, не дублируйте, не отражайте, не заполняйте и не закрывайте предоставленный предмет каким-либо образом"
+    "Исходный объект должен оставаться в точности таким, как указано, и должен оставаться пустым, если это сосуд"
+    "Создайте естественный контекст, например, столик в стиле кафе, подставку под него (не перекрывая края), кофемашину или чайник на заднем плане"
+    "полка с банками или освещение из окна — следите за тем, чтобы ничто не касалось объекта и не перекрывало его"
+    "Сочетайте перспективу и освещение; добавляйте тонкие, правдоподобные тени, отбрасываемые только на фон; используйте естественную фотографическую глубину резкости"
+    "НЕ добавляйте на объект текст, логотипы, наклейки, этикетки, жидкости, пену, лед или какой-либо реквизит."
+    "Ваша задача - только выполнить"
 )
 
+PROMPT_GENERATE_ADDITIONAL_ANGLES = """
+Сгенерируй дополнительные изображения товара {product_name}, 
+используя уже вырезанную фигуру. 
+Создай 3 новых ракурса: 
+1) Сверху под углом 30° 
+2) Под углом 15° справа 
+3) Под углом 15° слева 
+Каждое изображение должно быть в едином фоне и освещении, как на оригинале.
+"""
 
 
 PROMPT_GENERATE_HEADERS = """

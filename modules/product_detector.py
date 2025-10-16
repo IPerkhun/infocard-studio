@@ -1,6 +1,10 @@
-import io, requests, torch
+import io
+
+import requests
+import torch
 from PIL import Image
-from models_init.load_qwen_vl import QwenVLModel
+
+from models_init.loads_models import QwenVLModel
 
 
 class QwenVLDetector:

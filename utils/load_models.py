@@ -1,11 +1,15 @@
 import os
 
+from dotenv import load_dotenv
 from huggingface_hub import snapshot_download
+
+load_dotenv()
 
 MODELS = {
     "qwen_llm": "Qwen/Qwen3-4B-Instruct-2507-FP8",           
     "qwen_image_edit": "ovedrive/qwen-image-edit-4bit",      
-    "qwen_detect_product": "Qwen/Qwen2.5-VL-7B-Instruct-AWQ"     
+    "qwen_detect_product": "Qwen/Qwen2.5-VL-7B-Instruct-AWQ",
+    "briaai_rmbg": "briaai/RMBG-2.0"
 }
 
 
@@ -15,7 +19,8 @@ def download_model(repo_id: str, target_dir: str):
         repo_id=repo_id,
         local_dir=target_dir,
         local_dir_use_symlinks=False,
-        ignore_patterns=["*.msgpack"] 
+        ignore_patterns=["*.msgpack"],
+        token=os.getenv("HUGGINGFACE_HUB_TOKEN")
     )
     print(f"✅ Модель '{repo_id}' готова в: {target_dir}")
 

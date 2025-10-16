@@ -16,3 +16,4 @@ bitsandbytes
 vllm
 langgraph
 autoawq
+pydantic

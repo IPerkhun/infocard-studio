@@ -25,7 +25,6 @@ class LLMManager:
             streaming=False,
             http_client=httpx.Client(),
             # callbacks=[ConsoleCallbackHandler()],
-            extra_body={"enable_thinking": False, "top_k": 20},
         )
 
         return llm
