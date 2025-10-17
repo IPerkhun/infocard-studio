@@ -12,7 +12,7 @@ with open("products_input_20.json", "r", encoding="utf-8") as f:
 pcg = ProductCardGeneration()
 results = []
 
-for product in products:
+for product in products[:2]:
     print(f"⚙️ Обработка товара: {product.get('product_sku')}")
     payload = pcg.run(product)           
     results.append(payload)
@@ -22,8 +22,7 @@ with open(output_path, "w", encoding="utf-8") as f:
     json.dump(results, f, ensure_ascii=False, indent=2)
 
 print(f"\n✅ Все результаты сохранены в {output_path.resolve()}")
-
-
+#%%
 def safe_dirname(name: str) -> str:
     s = name.strip().lower()
     s = re.sub(r"\s+", "_", s)

@@ -41,9 +41,12 @@ class BackgroundGeneration:
         return rgba
 
     def _get_cutouts(self, data: Dict) -> List[Image.Image]:
-        urls = data.get("product_photos", [])
+        items = data.get("product_photos", []) or []
         cutouts: List[Image.Image] = []
-        for url in urls:
+        for it in items:
+            url = it if isinstance(it, str) else it.get("image_url")
+            if not url:
+                continue
             img = self._fetch_image_rgb(url)
             cutouts.append(self._remove_background(img))
         return cutouts

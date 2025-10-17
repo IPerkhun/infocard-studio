@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -15,13 +15,9 @@ class DetectProductInput(BaseModel):
 
 class DetectProductOutput(BaseModel):
     label: Literal["L", "M", "S", "NONE"] = Field(
-        ..., description="Класс габарита посуды: L/M/S или NONE, если объект не является посудой"
+        ...,
+        description="Класс габарита посуды: L/M/S или NONE, если объект не является посудой",
     )
-
-
-class ImageGenInput(BaseModel):
-    product_photos: List[str]
-    prompt: str
 
 
 class ImageGenOutput(BaseModel):
@@ -54,18 +50,24 @@ class SpecsOutput(BaseModel):
         ..., description="Готовый текстовый блок с характеристиками товара"
     )
 
+
 class DescriptionOutput(BaseModel):
     text: str = Field(...)
 
 
+class ProductPhoto(BaseModel):
+    image_id: str
+    image_position: Optional[int] = None
+    image_url: str
+
+
 class ProductData(BaseModel):
     job_id: str
-    product_sku: Optional[str]
+    product_sku: Optional[str] = None
     product_name: str
-    product_properties: Optional[str]
-    product_photos: List[str]
+    product_properties: Optional[str] = None
+    product_photos: List[ProductPhoto]
 
-
-class ResponseFormat(BaseModel):
-    job_id: str
-    generated_images: List[str]
+class ImageGenInput(BaseModel):
+    product_photos: List[Union[str, ProductPhoto]]
+    prompt: str

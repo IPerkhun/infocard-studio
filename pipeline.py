@@ -30,21 +30,29 @@ class ProductCardGeneration:
         self.graph = self._build_graph()
 
     def _normalize_photos(self, state: AgentState) -> AgentState:
-        photos = state.input_data.get("product_photos", [])
+        photos = state.input_data.get("product_photos", []) or []
+
+        if photos and isinstance(photos[0], str):
+            photos = [
+                {"image_url": u, "image_id": None, "image_position": idx + 1}
+                for idx, u in enumerate(photos)
+            ]
+        else:
+            photos = sorted(photos, key=lambda p: p.get("image_position", 10**9))
+
         if not photos:
             state.result["skip_generation"] = True
             state.result["generated_images"] = []
             state.result["used_label"] = "NONE"
             state.result["used_prompt"] = None
             state.result["need_variations"] = 0
-
             return state
-        
+
         if len(photos) > 4:
             photos = photos[:4]
+
         state.input_data["product_photos"] = photos
         state.result["need_variations"] = max(0, 4 - len(photos))
-
         return state
 
     def _augment_photos(self, state: AgentState) -> AgentState:
@@ -62,7 +70,19 @@ class ProductCardGeneration:
         return state
 
     def _detector_product(self, state: AgentState) -> AgentState:
-        image_url = state.input_data.get("product_photos", [None])[0]
+        tpl = (state.input_data.get("template") or "").strip().upper()
+        if tpl in {"L", "M", "S", "NONE"}:
+            state.result["label"] = tpl
+            state.result["detected_by"] = "template"  
+            return state
+
+        photos = state.input_data.get("product_photos", [])
+        first = photos[0] if photos else None
+        if isinstance(first, dict):
+            image_url = first.get("image_url")
+        else:
+            image_url = first 
+
         raw_text = detect_product_tool.invoke(
             {"image_url": image_url, "question": PROMPT_DETECT_LMS}
         )
@@ -72,8 +92,10 @@ class ProductCardGeneration:
         det: DetectProductOutput = so_chain.invoke(raw_text)
         label = getattr(det.label, "value", det.label)
         state.result["label"] = label
+        state.result["detected_by"] = "detector" 
 
         return state
+
 
     def _background_generation(self, state: AgentState) -> AgentState:
         photos = state.input_data.get("product_photos", [])
@@ -82,15 +104,14 @@ class ProductCardGeneration:
 
         if state.result.get("skip_generation"):
             return state
-        
+
         if label == "NONE":
             state.result["skip_generation"] = True
             state.result["generated_images"] = []
             state.result["used_label"] = "NONE"
             state.result["used_prompt"] = None
-
             return state
-        
+
         base_prompt = {
             "L": PROMPT_GENERATE_IMAGE_L,
             "M": PROMPT_GENERATE_IMAGE_M,
@@ -98,15 +119,21 @@ class ProductCardGeneration:
         }.get(label, PROMPT_GENERATE_IMAGE_M)
         extra = state.result.get("augment_prompt") or ""
         prompt_text = f"{base_prompt.format(product_name=product_name)} {extra}".strip()
+
+        photo_urls = [
+            (p.get("image_url") if isinstance(p, dict) else p)
+            for p in photos
+            if (p.get("image_url") if isinstance(p, dict) else p)
+        ]
+
         img_out: ImageGenOutput = generate_images_tool.invoke(
-            {"product_photos": photos, "prompt": prompt_text}
+            {"product_photos": photo_urls, "prompt": prompt_text}
         )
 
         state.result["generated_images"] = img_out.generated_images[:4]
         state.result["used_label"] = label
         state.result["used_prompt"] = prompt_text
         state.result["skip_generation"] = False
-
         return state
 
     def _generate_characteristics(self, state: AgentState) -> AgentState:
@@ -219,7 +246,7 @@ class ProductCardGeneration:
     def run_state(self, input_data) -> AgentState:
         init_state = AgentState(input_data=input_data)
         out = self.graph.invoke(init_state)
-        
+
         return out if isinstance(out, AgentState) else AgentState(**out)
 
     def run(self, input_data) -> dict:
