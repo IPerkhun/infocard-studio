@@ -1,19 +1,20 @@
+# detector.py
 import io
-
 import requests
 import torch
 from PIL import Image
-
-from models_init.loads_models import QwenVLModel
+from models_init.loads_models import QwenVLModel 
 
 
 class QwenVLDetector:
-    def __init__(self):
-        self.device = "cuda:0"
-        self.vl_model, self.processor = QwenVLModel().get_model()
-        self.vl_model.eval()
+    def __init__(self, device: str = "cuda:0"):
+        self.device = device if torch.cuda.is_available() else "cpu"
+        self.model, self.processor = QwenVLModel().get_model()
+        self.model.to(self.device).eval()
+        self._session = requests.Session()
 
-    def _vl_ask(self, image: Image.Image, question: str) -> str:
+    @torch.no_grad()
+    def _ask(self, image: Image.Image, question: str) -> str:
         messages = [
             {
                 "role": "user",
@@ -29,17 +30,15 @@ class QwenVLDetector:
         inputs = self.processor(text=[text], images=[image], return_tensors="pt").to(
             self.device
         )
-
-        with torch.no_grad():
-            output_ids = self.vl_model.generate(
-                **inputs, max_new_tokens=16, do_sample=False, temperature=0.0
-            )
+        output_ids = self.model.generate(
+            **inputs, max_new_tokens=16, do_sample=False, temperature=0.0
+        )
         return self.processor.batch_decode(output_ids, skip_special_tokens=True)[
             0
         ].strip()
 
     def predict_from_url(self, url: str, question: str) -> str:
-        img = Image.open(io.BytesIO(requests.get(url, timeout=20).content)).convert(
-            "RGB"
-        )
-        return self._vl_ask(img, question)
+        r = self._session.get(url, timeout=20)
+        r.raise_for_status()
+        img = Image.open(io.BytesIO(r.content)).convert("RGB")
+        return self._ask(img, question)

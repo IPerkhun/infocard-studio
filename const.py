@@ -1,4 +1,4 @@
-PARAMETRS_LLM = {"base_url": "http://91.218.245.82:8000/v1",
+PARAMETRS_LLM = {"base_url": "http://91.218.245.82:8001/v1",
                  "model_name": "models/qwen_llm",
                  "top_p": 0.8,
                  "temperature": 0.6}
