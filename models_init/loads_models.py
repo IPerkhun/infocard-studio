@@ -2,11 +2,8 @@ import os
 
 import torch
 from diffusers import QwenImageEditPipeline
-from transformers import (
-    AutoModelForVision2Seq,
-    AutoProcessor,
-    AutoModelForImageSegmentation,
-)
+from transformers import (AutoModelForImageSegmentation,
+                          AutoModelForVision2Seq, AutoProcessor)
 
 from const import QWEN_EDIT_PATH, QWEN_VL_PATH, RMBG_PATH
 

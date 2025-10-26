@@ -1,9 +1,19 @@
-# detector.py
 import io
+
 import requests
 import torch
 from PIL import Image
-from models_init.loads_models import QwenVLModel 
+
+from models_init.loads_models import QwenVLModel
+
+PROMPT_DETECT_OBJECT = (
+    "Ты — визуальный классификатор изображений. "
+    "Посмотри на картинку и определи, какой объект изображён. "
+    "Выбери ровно одно слово из списка: "
+    "КАСТРЮЛЯ, КОРОБКА, СТАКАН, ЧАШКА, ПУСТОЙ ФОН. "
+    "Не добавляй пояснений, не используй других слов. "
+    "Ответь строго одним словом из списка."
+)
 
 
 class QwenVLDetector:
@@ -14,7 +24,7 @@ class QwenVLDetector:
         self._session = requests.Session()
 
     @torch.no_grad()
-    def _ask(self, image: Image.Image, question: str) -> str:
+    def _ask_raw(self, image: Image.Image, question: str, max_new_tokens: int = 128) -> str:
         messages = [
             {
                 "role": "user",
@@ -27,18 +37,28 @@ class QwenVLDetector:
         text = self.processor.apply_chat_template(
             messages, add_generation_prompt=True, tokenize=False
         )
-        inputs = self.processor(text=[text], images=[image], return_tensors="pt").to(
-            self.device
-        )
-        output_ids = self.model.generate(
-            **inputs, max_new_tokens=16, do_sample=False, temperature=0.0
-        )
-        return self.processor.batch_decode(output_ids, skip_special_tokens=True)[
-            0
-        ].strip()
+        inputs = self.processor(
+            text=[text], images=[image], return_tensors="pt"
+        ).to(self.device)
 
-    def predict_from_url(self, url: str, question: str) -> str:
+        gen_kwargs = dict(
+            max_new_tokens=max_new_tokens,   
+            do_sample=True,                 
+            eos_token_id=self.processor.tokenizer.eos_token_id,
+            pad_token_id=(
+                self.processor.tokenizer.pad_token_id
+                if self.processor.tokenizer.pad_token_id is not None
+                else self.processor.tokenizer.eos_token_id
+            ),
+        )
+        output_ids = self.model.generate(**inputs, **gen_kwargs, temperature=0.1)
+
+        new_tokens = output_ids[:, inputs["input_ids"].shape[-1]:]
+        out = self.processor.batch_decode(new_tokens, skip_special_tokens=True)[0].strip()
+        return out
+
+    def predict_from_url(self, url: str, question: str = PROMPT_DETECT_OBJECT) -> str:
         r = self._session.get(url, timeout=20)
         r.raise_for_status()
         img = Image.open(io.BytesIO(r.content)).convert("RGB")
-        return self._ask(img, question)
+        return self._ask_raw(img, question)

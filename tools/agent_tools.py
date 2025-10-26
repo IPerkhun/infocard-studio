@@ -1,8 +1,10 @@
+from typing import List
+
 from langchain_core.tools import tool
+
 from modules.generate_background import BackgroundGeneration
 from modules.product_detector import QwenVLDetector
 from schemas.schema import ImageGenInput, ImageGenOutput
-from typing import List
 
 bg_generator = BackgroundGeneration()
 detector = QwenVLDetector()

@@ -1,28 +1,20 @@
 from __future__ import annotations
+
 from typing import Dict, List
+
 from langgraph.graph import END, StateGraph
 
 from models_init.llm_manager import LLMManager
-from prompts.prompt import (
-    PROMPT_DETECT_LMS,
-    PROMPT_GENERATE_ADDITIONAL_ANGLES,
-    PROMPT_GENERATE_CHARACTERISTICS,
-    PROMPT_GENERATE_DESCRIPTION,
-    PROMPT_GENERATE_HEADERS,
-    PROMPT_GENERATE_IMAGE_L,
-    PROMPT_GENERATE_IMAGE_M,
-    PROMPT_GENERATE_IMAGE_S,
-    PROMPT_GENERATE_SPECS,
-)
-from schemas.schema import (
-    AgentState,
-    DescriptionOutput,
-    DetectProductOutput,
-    HeadersOutput,
-    ImageGenOutput,
-    OutputLLM,
-    SpecsOutput,
-)
+from prompts.prompt import (PROMPT_DETECT_LMS,
+                            PROMPT_GENERATE_ADDITIONAL_ANGLES,
+                            PROMPT_GENERATE_CHARACTERISTICS,
+                            PROMPT_GENERATE_DESCRIPTION,
+                            PROMPT_GENERATE_HEADERS, PROMPT_GENERATE_IMAGE_L,
+                            PROMPT_GENERATE_IMAGE_M, PROMPT_GENERATE_IMAGE_S,
+                            PROMPT_GENERATE_SPECS)
+from schemas.schema import (AgentState, DescriptionOutput, DetectProductOutput,
+                            HeadersOutput, ImageGenOutput, OutputLLM,
+                            SpecsOutput)
 from tools.agent_tools import detect_product_tool, generate_images_tool
 
 _LABEL_PROMPTS = {
@@ -118,6 +110,7 @@ class ProductCardGeneration:
         if tpl in {"L", "M", "S", "NONE"}:
             state.result["label"] = tpl
             state.result["detected_by"] = "template"
+
             return state
 
         urls = self._as_urls(state.input_data.get("product_photos"))
@@ -134,6 +127,7 @@ class ProductCardGeneration:
         )
         state.result["label"] = det.label
         state.result["detected_by"] = "detector"
+
         return state
 
     def _gen_background(self, state: AgentState) -> AgentState:
@@ -199,7 +193,25 @@ class ProductCardGeneration:
             product_name=state.input_data["product_name"],
             product_properties=state.input_data.get("product_properties") or "",
         )
-        out: OutputLLM = self._so(OutputLLM, "generate_characteristics").invoke(prompt)
+
+        out = self._so(OutputLLM, "generate_characteristics").invoke(prompt)
+
+        if not isinstance(out, OutputLLM):
+            from pydantic import ValidationError
+
+            try:
+                out = OutputLLM.model_validate(out)
+            except ValidationError:
+                import json
+
+                raw = out if isinstance(out, str) else str(out)
+                s = raw.find("{")
+                e = raw.rfind("}")
+                data = json.loads(raw[s : e + 1])
+                out = OutputLLM.model_validate(data)
+
+                print(out)
+
         state.result["characteristics"] = out.model_dump()
         return state
 
@@ -270,29 +282,47 @@ class ProductCardGeneration:
         prefix = (label or "M").lower()
 
         ch = state.result.get("characteristics", {}) or {}
-        default_title = ch.get("title", "")
-        default_subtitle = ch.get("subtitle", "")
-        utp = ch.get("utp", []) or []
+        title = ch.get("title", "") or ""
+        subtitle = ch.get("subtitle", "") or ""
+        utp_list = ch.get("utp", []) or []
+
+        def utp(i: int) -> str:
+            idx = i - 1
+            return utp_list[idx]["text"] if 0 <= idx < len(utp_list) else ""
+
+        utp_3_cont = ch.get("utp_3_continue", "") or ""
+        utp_4_cont = ch.get("utp_4_continue", "") or ""
+        utp_5_cont = ch.get("utp_5_continue", "") or ""
+
         specs_text = state.result.get("specs_text", "") or ""
         description_text = state.result.get("description_text", "") or ""
 
         text_block = {
-            f"{prefix}-1-slide-title": default_title,
-            f"{prefix}-1-slide-subtitle": default_subtitle,
+            f"{prefix}-1-slide-title": title,
+            f"{prefix}-1-slide-subtitle": subtitle,
+            f"{prefix}-1-slide-utp-1": utp(1),
+            f"{prefix}-1-slide-utp-2": utp(2),
+
+            f"{prefix}-2-slide-utp-3": utp(3),
+            f"{prefix}-2-slide-utp-3-continue": utp_3_cont,
+
+            f"{prefix}-3-slide-utp-4": utp(4),
+            f"{prefix}-3-slide-utp-4-continue": utp_4_cont,
+            f"{prefix}-3-slide-utp-5": utp(5),
+            f"{prefix}-3-slide-utp-5-continue": utp_5_cont,
+
+            f"{prefix}-4-slide-utp-6": utp(6),
+            f"{prefix}-4-slide-utp-7": utp(7),
+            f"{prefix}-4-slide-utp-8": utp(8),
+
             f"{prefix}-specs": specs_text,
             f"{prefix}-description": description_text,
         }
-
-        for i in range(1, 9):
-            text_block[f"{prefix}-{i}-utp"] = (
-                utp[i - 1]["text"] if i - 1 < len(utp) else ""
-            )
 
         gen_images = []
         for meta in images:
             gen_images.append(
                 {
-                    "image_id": meta.get("image_id"),
                     "image_position": meta.get("image_position"),
                     "image_base64": meta.get("image_base64", ""),
                 }
@@ -303,8 +333,8 @@ class ProductCardGeneration:
             "text": text_block,
             "generated_images": gen_images,
         }
-
         return payload
+
 
     def run_state(self, input_data: Dict) -> AgentState:
         init = AgentState(input_data=input_data)
