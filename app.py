@@ -1,82 +1,134 @@
-from typing import List, Union
+import uuid
+from threading import Lock
+from typing import Any, Dict, List, Optional, Union
 
+import httpx
 import uvicorn
-from fastapi import Body, FastAPI, HTTPException
+from fastapi import BackgroundTasks, Body, FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, HttpUrl, Field
 
 from pipeline import ProductCardGeneration
 from schemas.schema import ProductCardResponse, ProductData
 
-app = FastAPI(title="Product Card Generation API", version="1.0.0")
-
+app = FastAPI(title="Product Card Generation API", version="2.4.0")
 product_card_generator = ProductCardGeneration()
 
 
-@app.post(
-    "/get_product_card",
-    response_model=List[ProductCardResponse],
-)
+class StatusStore:
+    def __init__(self):
+        self._data: Dict[str, Dict[str, Any]] = {}
+        self._lock = Lock()
 
-def get_product_card(
-    data: Union[ProductData, List[ProductData]] = Body(
-        ...,
-        examples={
-            "single": {
-                "summary": "Один товар",
-                "value": {
-                    "job_id": "34dece5b-f4e4-4409-a5b8-7f6d60aa2f73",
-                    "template": "L",  
-                    "product_name": "Кастрюля с крышкой из нержавеющей стали",
-                    "product_properties": "|Цвет:Серебристый|Диаметр, см:17.5|Объём, л:1.5|...",
-                    "product_photos": [
-                        {
-                            "image_position": 1,
-                            "image_url": "https://goods-photos.static1-sima-land.com/items/20392/0/1600.jpg",
-                        }
-                    ],
-                },
-            },
-            "batch": {
-                "summary": "Несколько товаров",
-                "value": [
-                    {
-                        "job_id": "34dece5b-f4e4-4409-a5b8-7f6d60aa2f73",
-                        "template": "M",
-                        "product_name": "Кастрюля 1.5 л «Классика»",
-                        "product_photos": [
-                            {
-                                "image_position": 1,
-                                "image_url": "https://goods-photos.static1-sima-land.com/items/20392/0/1600.jpg",
-                            }
-                        ],
-                    },
-                    {
-                        "job_id": "34dece5bsdag-f4esdag4-440asdsad9-a5b8sdg-7f6d6012343521",
-                        "product_name": "Сковорода гриль «Квадрат. Гриль», 26x26 см",
-                        "product_photos": [
-                            {
-                                "image_position": 2,
-                                "image_url": "https://goods-photos.static1-sima-land.com/items/564932/0/1600.jpg",
-                            }
-                        ],
-                    },
-                ],
-            },
-        },
+    def set(self, job_id: str, **kwargs):
+        with self._lock:
+            self._data.setdefault(job_id, {})
+            self._data[job_id].update(kwargs)
+
+    def get(self, job_id: str) -> Optional[Dict[str, Any]]:
+        with self._lock:
+            return self._data.get(job_id)
+
+    def all(self) -> Dict[str, Dict[str, Any]]:
+        with self._lock:
+            return dict(self._data)
+
+
+store = StatusStore()
+
+
+class ProductDataExtended(ProductData):
+    callback_url: Optional[HttpUrl] = Field(
+        default=None, description="URL для обратного вызова (опционально)"
     )
+
+
+class EnqueueItem(BaseModel):
+    job_id: str
+    status: str = "queued"
+
+
+class EnqueueResponse(BaseModel):
+    jobs: List[EnqueueItem]
+
+
+def post_callback(url: Optional[str], payload: Dict[str, Any]) -> None:
+    if not url:
+        return
+    try:
+        with httpx.Client(timeout=20) as client:
+            client.post(str(url), json=payload)
+    except Exception:
+        pass
+
+
+def run_job(job_id: str, input_json: Dict[str, Any]):
+    callback_url = input_json.get("callback_url")
+    store.set(job_id, status="running", progress=0)
+    post_callback(callback_url, {"job_id": job_id, "status": "running", "progress": 0})
+    try:
+        payload: Dict[str, Any] = product_card_generator.run(input_data=input_json)
+        result = ProductCardResponse(**payload).model_dump(mode="json")
+        store.set(job_id, status="succeeded", progress=100, result=result)
+        post_callback(callback_url, {"job_id": job_id, "status": "succeeded", **result})
+    except Exception as e:
+        err = {
+            "job_id": job_id,
+            "status": "failed",
+            "error": {"code": "INFERENCE_ERROR", "message": str(e)},
+        }
+        store.set(job_id, status="failed", progress=0, error=err)
+        post_callback(callback_url, err)
+
+
+@app.post("/get_product_card", status_code=202, response_model=EnqueueResponse)
+def get_product_card(
+    background_tasks: BackgroundTasks,
+    data: Union[ProductDataExtended, List[ProductDataExtended]] = Body(...),
 ):
-    items: List[ProductData] = data if isinstance(data, list) else [data]
-
-    results: List[ProductCardResponse] = []
+    items: List[ProductDataExtended] = data if isinstance(data, list) else [data]
+    jobs: List[EnqueueItem] = []
     for item in items:
-        try:
-            payload = product_card_generator.run(
-                input_data=item.model_dump(mode="json", exclude_none=True)
-            )
-            results.append(ProductCardResponse(**payload))
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"{item.job_id}: {e}")
+        job_id = item.job_id or f"job_{uuid.uuid4().hex[:8]}"
+        input_json = item.model_dump(mode="json", exclude_none=True)
+        store.set(job_id, status="queued", progress=0, input=input_json)
+        background_tasks.add_task(run_job, job_id, input_json)
+        jobs.append(EnqueueItem(job_id=job_id))
+    return JSONResponse(
+        status_code=202, content=EnqueueResponse(jobs=jobs).model_dump()
+    )
 
-    return results
+
+@app.get("/jobs/{job_id}")
+def get_job(job_id: str):
+    st = store.get(job_id)
+    if not st:
+        raise HTTPException(status_code=404, detail="job not found")
+    return st
+
+
+@app.get("/jobs")
+def get_all_jobs():
+    data = store.all()
+    return [{"job_id": jid, "status": info.get("status")} for jid, info in data.items()]
+
+
+@app.get("/results")
+def get_all_results():
+    data = store.all()
+    out: List[Dict[str, Any]] = []
+    for jid, info in data.items():
+        res = info.get("result")
+        if not res:
+            continue
+        out.append(
+            {
+                "job_id": jid,
+                "text": res.get("text", {}),
+                "generated_images": res.get("generated_images", []),
+            }
+        )
+    return out
 
 
 if __name__ == "__main__":
