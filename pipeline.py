@@ -111,6 +111,8 @@ class ProductCardGeneration:
             state.result["label"] = tpl
             state.result["detected_by"] = "template"
 
+            print(f"_detect_label{state.result}")
+
             return state
 
         urls = self._as_urls(state.input_data.get("product_photos"))
@@ -210,9 +212,9 @@ class ProductCardGeneration:
                 data = json.loads(raw[s : e + 1])
                 out = OutputLLM.model_validate(data)
 
-                print(out)
-
         state.result["characteristics"] = out.model_dump()
+
+        print(f"characteristics{state.result["characteristics"]}")
         return state
 
     def _gen_headers(self, state: AgentState) -> AgentState:
@@ -249,6 +251,7 @@ class ProductCardGeneration:
             )
         )
         state.result["description_text"] = out.text
+        print(f"description_text{state.result["description_text"]}")
         return state
 
     def _build_graph(self):

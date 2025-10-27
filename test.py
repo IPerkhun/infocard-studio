@@ -5,14 +5,14 @@ from pathlib import Path
 
 from pipeline import ProductCardGeneration
 
-INPUT = Path("products_formatted.json")
+INPUT = Path("temp.json")
 OUTPUT = Path("products_results.json")
 
 with INPUT.open("r", encoding="utf-8") as f:
     data = json.load(f)
 
 products = data if isinstance(data, list) else [data]
-products = products[:1]
+# products = products[:1]
 
 pcg = ProductCardGeneration()
 results = []
