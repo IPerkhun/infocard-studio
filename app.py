@@ -20,6 +20,10 @@ class StatusStore:
         self._data: Dict[str, Dict[str, Any]] = {}
         self._lock = Lock()
 
+    def clear(self):
+        with self._lock:
+            self._data.clear()
+
     def set(self, job_id: str, **kwargs):
         with self._lock:
             self._data.setdefault(job_id, {})
@@ -86,6 +90,8 @@ def get_product_card(
     background_tasks: BackgroundTasks,
     data: Union[ProductDataExtended, List[ProductDataExtended]] = Body(...),
 ):
+    store.clear()
+
     items: List[ProductDataExtended] = data if isinstance(data, list) else [data]
     jobs: List[EnqueueItem] = []
     for item in items:

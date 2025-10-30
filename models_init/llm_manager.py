@@ -24,7 +24,7 @@ class LLMManager:
             top_p=PARAMETRS_LLM["top_p"],
             streaming=False,
             http_client=httpx.Client(),
-            callbacks=[ConsoleCallbackHandler()],
+            # callbacks=[ConsoleCallbackHandler()],
         )
 
         return llm

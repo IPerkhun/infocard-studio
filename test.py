@@ -12,7 +12,6 @@ with INPUT.open("r", encoding="utf-8") as f:
     data = json.load(f)
 
 products = data if isinstance(data, list) else [data]
-# products = products[:1]
 
 pcg = ProductCardGeneration()
 results = []
