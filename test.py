@@ -31,9 +31,10 @@ with OUTPUT.open("w", encoding="utf-8") as f:
     json.dump(results, f, ensure_ascii=False, indent=2)
 
 print(f"\n✅ {len(results)} результатов сохранено в {OUTPUT.resolve()}")
- 
+
 import base64
-# %%  
+
+# %%
 import json
 import re
 from pathlib import Path
@@ -84,5 +85,3 @@ for payload in results:
     print(f"✅ {job_id}: сохранено {len(generated_images)} изображений")
 
 print("\n🎉 Все изображения сохранены в папку 'images/'")
-
-# %%
