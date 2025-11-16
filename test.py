@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pipeline import ProductCardGeneration
 
-INPUT = Path("temp.json")
+INPUT = Path("data/input.json")
 OUTPUT = Path("products_results.json")
 
 with INPUT.open("r", encoding="utf-8") as f:
@@ -32,93 +32,131 @@ with OUTPUT.open("w", encoding="utf-8") as f:
 import base64
 
 # %%
+import base64
 import json
-import re
 from pathlib import Path
 
+INPUT = Path("products_results.json")   # твой файл с результатами
+IMAGES_DIR = Path("images")            # куда сохраняем картинки
+IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
-def safe_dirname(name: str) -> str:
-    s = str(name).strip().lower()
-    s = re.sub(r"[^a-z0-9._-]", "_", s)
-    return s or "product"
+with INPUT.open("r", encoding="utf-8") as f:
+    data = json.load(f)
 
+products = data if isinstance(data, list) else [data]
 
-inputs_path = Path("products_formatted.json")
-results_path = Path("products_results.json")
-out_root = Path("images")
-out_root.mkdir(parents=True, exist_ok=True)
-
-products = json.loads(inputs_path.read_text(encoding="utf-8"))
-results = json.loads(results_path.read_text(encoding="utf-8"))
-
-for payload in results:
-    job_id = payload.get("job_id")
-    if not job_id:
+for i, product in enumerate(products, 1):
+    if not isinstance(product, dict):
+        print(f"⚠️ Пропуск #{i}: элемент не dict (type={type(product).__name__})")
         continue
 
-    out_dir = out_root / safe_dirname(job_id)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    job_id = product.get("job_id") or f"item_{i}"
+    images = product.get("generated_images") or []
 
-    generated_images = payload.get("generated_images", [])
-    if not generated_images:
-        continue
-
-    for i, img_data in enumerate(generated_images, start=1):
-        if isinstance(img_data, dict):
-            b64img = img_data.get("image_base64") or img_data.get("image")
-        else:
-            b64img = img_data
-
-        if not isinstance(b64img, str):
+    for img in images:
+        if not isinstance(img, dict):
             continue
+
+        pos = img.get("image_position") or 0
+        b64 = img.get("image_base64") or ""
+
+        if not b64.strip():
+            continue
+
+        # вдруг там "data:image/png;base64,...."
+        if "," in b64:
+            b64 = b64.split(",", 1)[1]
 
         try:
-            img_bytes = base64.b64decode(b64img)
-        except Exception:
+            raw = base64.b64decode(b64)
+        except Exception as e:
+            print(f"⚠️ Ошибка декодирования для job_id={job_id}, position={pos}: {e}")
             continue
 
-        (out_dir / f"image_{i}.png").write_bytes(img_bytes)
+        filename = IMAGES_DIR / f"{job_id}_pos{pos}.png"
+        with filename.open("wb") as out:
+            out.write(raw)
 
-    print(f"✅ {job_id}: сохранено {len(generated_images)} изображений")
+        print(f"✅ Saved: {filename}")
 
-print("\n🎉 Все изображения сохранены в папку 'images/'")
 # %%
-from pprint import pprint
+import pandas as pd
+import uuid
+import json
 
-from pipeline import ProductCardGeneration
-from schemas.schema import ProductCardResponse
+# Основной датасет
+DATA_FILE = "data/TEST_MODEL/На_вход_Список_товаров_для_теста_на_Озон.xlsx"       # либо data.csv
+USE_EXCEL = True
 
-inp = {
-    "job_id": "34dece5bsdag-f4esdag4-440asdsad9-a5b8sdg-7f6d6012343521",
-    "product_sku": "5669878",
-    "product_name": "Сковорода гриль чугунная Доляна «Квадрат. Гриль», 26x26 см, съёмная деревянная ручка",
-    "product_properties": "|Цвет:Чёрный|Форма:Квадратная|Диаметр, см:28|Крышка:Нет|Материал:Чугун|Съёмная ручка:Да|Тип покрытия:Без покрытия|Тип плиты:Для индукционной плиты|Тип плиты:Для электрической плиты|Тип плиты:Для галогенной плиты|Тип плиты:Для газовой плиты|Тип плиты:Для стеклокерамической плиты|Капсульное дно:Нет|Вид сковороды:Сковорода-гриль|Можно мыть в посудомоечной машине:Нет|Особенность:Индукционная плита",
-    "product_photos": [
-        {
-            "image_position": 1,
-            "image_url": "https://goods-photos.static1-sima-land.com/items/564932/0/1600.jpg",
-        }
-    ],
-}
+# Файл с маппингом filename -> file_id
+MAPPING_FILE = "drive_mapping.csv"   # или .xlsx
 
-gen = ProductCardGeneration()
-payload = gen.run(inp)
+# === читаем основной датасет ===
+if USE_EXCEL:
+    df = pd.read_excel(DATA_FILE)
+else:
+    df = pd.read_csv(DATA_FILE)
 
-pprint(payload)
-# %%
-[
-    {
-        "job_id": "34dece5b-f4e4-4409-a5b8-7f6d60aa2f73",
-        "template": "M",
-        "product_sku": "5669545",
-        "product_name": "Кастрюля с крышкой из нержавеющей стали Доляна «Классика», 1,5 л, d=17,5 см",
-        "product_properties": "|Цвет:Серебристый|Диаметр, см:17.5|Объём, л:1.5|Высота стенки, см:8.5|Крышка:Да|Материал крышки:Стекло|Материал:Нержавеющая сталь|Тип покрытия:Без покрытия|Тип плиты:Для электрической плиты|Тип плиты:Для газовой плиты|Тип плиты:Для стеклокерамической плиты|Тип плиты:Для галогенной плиты|Капсульное дно:Да|Можно мыть в посудомоечной машине:Да",
-        "product_photos": [
-            {
-                "image_id": "52187a69-2e18-4cc7-8400-0b07e0b47b14",
-                "image_position": 1,
-                "image_url": "https://goods-photos.static1-sima-land.com/items/564941/3/1600.jpg",
-            }
-        ],
+# === читаем mapping filename -> file_id ===
+# формат: filename,file_id
+mapping_df = pd.read_csv(MAPPING_FILE)   # если xlsx: pd.read_excel(...)
+filename_to_id = dict(zip(mapping_df["filename"], mapping_df["file_id"]))
+
+def make_download_url_from_filename(filename: str) -> str:
+    """
+    Берём имя файла, смотрим в словарь filename -> file_id
+    и возвращаем ссылку на скачивание.
+    Если не нашли — возвращаем сам filename (чтобы скрипт не падал).
+    """
+    filename = filename.strip()
+    file_id = filename_to_id.get(filename)
+    if not file_id:
+        # не нашли в маппинге — оставляем как есть
+        return filename
+    return f"https://drive.usercontent.google.com/u/0/uc?id={file_id}&export=download"
+
+result = []
+
+for _, row in df.iterrows():
+    sku = str(row["Артикул товара"]).strip()
+
+    photos = []
+    for i in range(1, 5):
+        col_name = f"Картинка товара {i}"
+        if col_name not in df.columns:
+            continue
+
+        value = row[col_name]
+        if pd.isna(value):
+            continue
+
+        filename = str(value).strip()
+        if not filename:
+            continue
+
+        download_url = make_download_url_from_filename(filename)
+
+        photos.append({
+            "image_id": f"{sku}_{i}",      # можно заменить на uuid если нужно
+            "image_position": i,
+            "image_url": download_url
+        })
+
+    item = {
+        "job_id": str(uuid.uuid4()),  # или sku
+        "product_sku": sku,
+        "product_name": str(row["Название товара"]).strip() if not pd.isna(row["Название товара"]) else "",
+        "product_properties": str(row["Характеристики товара"]).strip() if not pd.isna(row["Характеристики товара"]) else "",
+        "product_photos": photos
     }
-]
+
+    result.append(item)
+
+with open("output.json", "w", encoding="utf-8") as f:
+    json.dump(result, f, ensure_ascii=False, indent=2)
+
+print("Готово, записано в output.json")
+
+
+
+#%%

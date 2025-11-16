@@ -1,12 +1,8 @@
-#%%
-import os
-
 import torch
 from diffusers import QwenImageEditPipeline
-from transformers import (AutoModelForImageSegmentation,
-                          AutoModelForVision2Seq, AutoProcessor)
+from transformers import AutoModelForVision2Seq, AutoProcessor
 
-from const import QWEN_EDIT_PATH, QWEN_VL_PATH, RMBG_PATH
+from const import QWEN_EDIT_PATH, QWEN_VL_PATH
 
 
 class CustomEditQwenPipeline:
@@ -33,20 +29,3 @@ class QwenVLModel:
 
     def get_model(self):
         return self.model, self.processor
-
-
-class RMBGModel:
-    def __init__(self):
-        self.model = (
-            AutoModelForImageSegmentation.from_pretrained(
-                RMBG_PATH,
-                trust_remote_code=True,
-                token=os.getenv("HUGGINGFACE_HUB_TOKEN"),
-            )
-            .to("cuda:0")
-            .eval()
-        )
-
-    def get_model(self):
-        return self.model
-#%%

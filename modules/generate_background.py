@@ -86,6 +86,7 @@ class BackgroundGeneration:
                         prompt=prompt,
                         num_inference_steps=self.cfg.num_inference_steps,
                         true_cfg_scale=self.cfg.true_cfg_scale,
+                        negative_prompt="outpainting, completion, reconstruction, fill missing parts, inpainting, shape change, geometry change, scaling, auto-centering, alteration of object, people, human, hand, face, text, letters, logo, label, watermark, clothes, food, animal, extra objects, reflection mismatch, fake reflections, plastic texture, cartoon, artistic style, blur, noise, low resolution, artifact, distortion, caption, subtitle, handwriting, printed text, font, numbers, symbols, text overlay, UI elements, interface, menu icons, diagrams, tables, stickers, product label, packaging text, brand name, advertisement text, banner, poster text",
                     )
 
                     out = result.images[0]
