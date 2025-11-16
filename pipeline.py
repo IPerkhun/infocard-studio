@@ -1,4 +1,3 @@
-# %%
 from typing import Dict, Type
 
 from langgraph.graph import END, StateGraph
@@ -6,16 +5,27 @@ from pydantic import BaseModel
 
 
 from models_init.llm_manager import LLMManager
-from prompts.prompt import (PROMPT_DETECT_LMS, PROMPT_DETECT_OBJECT,
-                            PROMPT_GENERATE_ADDITIONAL_ANGLES,
-                            PROMPT_GENERATE_CHARACTERISTICS,
-                            PROMPT_GENERATE_DESCRIPTION,
-                            PROMPT_GENERATE_HEADERS, PROMPT_GENERATE_IMAGE_L,
-                            PROMPT_GENERATE_IMAGE_M, PROMPT_GENERATE_IMAGE_S,
-                            PROMPT_GENERATE_SPECS)
-from schemas.schema import (AgentState, DescriptionOutput, DetectProductOutput,
-                            HeadersOutput, ImageGenOutput, OutputLLM,
-                            SpecsOutput)
+from prompts.prompt import (
+    PROMPT_DETECT_LMS,
+    PROMPT_DETECT_OBJECT,
+    PROMPT_GENERATE_ADDITIONAL_ANGLES,
+    PROMPT_GENERATE_CHARACTERISTICS,
+    PROMPT_GENERATE_DESCRIPTION,
+    PROMPT_GENERATE_HEADERS,
+    PROMPT_GENERATE_IMAGE_L,
+    PROMPT_GENERATE_IMAGE_M,
+    PROMPT_GENERATE_IMAGE_S,
+    PROMPT_GENERATE_SPECS,
+)
+from schemas.schema import (
+    AgentState,
+    DescriptionOutput,
+    DetectProductOutput,
+    HeadersOutput,
+    ImageGenOutput,
+    OutputLLM,
+    SpecsOutput,
+)
 from tools.agent_tools import detect_product_tool, generate_images_tool
 
 _LABEL_PROMPTS = {
@@ -117,8 +127,6 @@ class ProductCardGeneration:
         det: DetectProductOutput = runnable.invoke(prompt)
 
         state.result["label"] = det.label
-
-        print(state.result["label"])
 
         return state
 
@@ -308,3 +316,4 @@ class ProductCardGeneration:
     def run(self, input_data: Dict) -> dict:
         state = self.run_state(input_data)
         return self._build_payload(state=state)
+        

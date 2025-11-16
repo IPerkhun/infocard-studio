@@ -22,7 +22,6 @@ for i, product in enumerate(products, 1):
         continue
 
     sku = product.get("product_sku") or product.get("job_id") or f"#{i}"
-    print(f"⚙️ Обработка товара: {sku}")
 
     payload = pcg.run(product)
     results.append(payload)
@@ -30,9 +29,8 @@ for i, product in enumerate(products, 1):
 with OUTPUT.open("w", encoding="utf-8") as f:
     json.dump(results, f, ensure_ascii=False, indent=2)
 
-print(f"\n✅ {len(results)} результатов сохранено в {OUTPUT.resolve()}")
-
 import base64
+
 # %%
 import json
 import re
@@ -84,7 +82,7 @@ for payload in results:
     print(f"✅ {job_id}: сохранено {len(generated_images)} изображений")
 
 print("\n🎉 Все изображения сохранены в папку 'images/'")
-#%%
+# %%
 from pprint import pprint
 
 from pipeline import ProductCardGeneration
@@ -96,15 +94,31 @@ inp = {
     "product_name": "Сковорода гриль чугунная Доляна «Квадрат. Гриль», 26x26 см, съёмная деревянная ручка",
     "product_properties": "|Цвет:Чёрный|Форма:Квадратная|Диаметр, см:28|Крышка:Нет|Материал:Чугун|Съёмная ручка:Да|Тип покрытия:Без покрытия|Тип плиты:Для индукционной плиты|Тип плиты:Для электрической плиты|Тип плиты:Для галогенной плиты|Тип плиты:Для газовой плиты|Тип плиты:Для стеклокерамической плиты|Капсульное дно:Нет|Вид сковороды:Сковорода-гриль|Можно мыть в посудомоечной машине:Нет|Особенность:Индукционная плита",
     "product_photos": [
-      {
-        "image_position": 1,
-        "image_url": "https://goods-photos.static1-sima-land.com/items/564932/0/1600.jpg"
-      }
-    ]
-  }
+        {
+            "image_position": 1,
+            "image_url": "https://goods-photos.static1-sima-land.com/items/564932/0/1600.jpg",
+        }
+    ],
+}
 
 gen = ProductCardGeneration()
 payload = gen.run(inp)
 
 pprint(payload)
 # %%
+[
+    {
+        "job_id": "34dece5b-f4e4-4409-a5b8-7f6d60aa2f73",
+        "template": "M",
+        "product_sku": "5669545",
+        "product_name": "Кастрюля с крышкой из нержавеющей стали Доляна «Классика», 1,5 л, d=17,5 см",
+        "product_properties": "|Цвет:Серебристый|Диаметр, см:17.5|Объём, л:1.5|Высота стенки, см:8.5|Крышка:Да|Материал крышки:Стекло|Материал:Нержавеющая сталь|Тип покрытия:Без покрытия|Тип плиты:Для электрической плиты|Тип плиты:Для газовой плиты|Тип плиты:Для стеклокерамической плиты|Тип плиты:Для галогенной плиты|Капсульное дно:Да|Можно мыть в посудомоечной машине:Да",
+        "product_photos": [
+            {
+                "image_id": "52187a69-2e18-4cc7-8400-0b07e0b47b14",
+                "image_position": 1,
+                "image_url": "https://goods-photos.static1-sima-land.com/items/564941/3/1600.jpg",
+            }
+        ],
+    }
+]
