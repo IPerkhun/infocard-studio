@@ -6,15 +6,6 @@ from PIL import Image
 
 from models_init.loads_models import QwenVLModel
 
-PROMPT_DETECT_OBJECT = (
-    "Ты — визуальный классификатор изображений. "
-    "Посмотри на картинку и определи, какой объект изображён. "
-    "Выбери ровно одно слово из списка: "
-    "КАСТРЮЛЯ, КОРОБКА, СТАКАН, ЧАШКА, ПУСТОЙ ФОН. "
-    "Не добавляй пояснений, не используй других слов. "
-    "Ответь строго одним словом из списка."
-)
-
 
 class QwenVLDetector:
     def __init__(self, device: str = "cuda:0"):
@@ -55,10 +46,12 @@ class QwenVLDetector:
 
         new_tokens = output_ids[:, inputs["input_ids"].shape[-1]:]
         out = self.processor.batch_decode(new_tokens, skip_special_tokens=True)[0].strip()
+
         return out
 
-    def predict_from_url(self, url: str, question: str = PROMPT_DETECT_OBJECT) -> str:
+    def predict_from_url(self, url: str, question) -> str:
         r = self._session.get(url, timeout=20)
         r.raise_for_status()
         img = Image.open(io.BytesIO(r.content)).convert("RGB")
+
         return self._ask_raw(img, question)

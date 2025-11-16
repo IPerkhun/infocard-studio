@@ -1,3 +1,4 @@
+#%%
 import os
 
 import torch
@@ -48,3 +49,4 @@ class RMBGModel:
 
     def get_model(self):
         return self.model
+#%%

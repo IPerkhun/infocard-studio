@@ -1,30 +1,30 @@
-import logging
+import os
 
-import httpx
-from langchain.callbacks.tracers import ConsoleCallbackHandler
-from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
+from langchain_gigachat import GigaChat
 
-from const import PARAMETRS_LLM
-
-logger = logging.getLogger(__name__)
+load_dotenv()
 
 
 class LLMManager:
     def __init__(self):
-        self.base_url = PARAMETRS_LLM["base_url"]
-        self.model_name = PARAMETRS_LLM["model_name"]
-        self.llm = self._init_llm()
-
-    def _init_llm(self) -> ChatOpenAI:
-        llm = ChatOpenAI(
-            model=self.model_name,
-            api_key="EMPTY",
-            base_url=self.base_url,
-            temperature=PARAMETRS_LLM['temperature'],
-            top_p=PARAMETRS_LLM["top_p"],
-            streaming=False,
-            http_client=httpx.Client(),
-            # callbacks=[ConsoleCallbackHandler()],
+        self.credentials = os.environ.get("GIGACHAT_CREDENTIALS")
+        self.scope = os.environ.get("GIGACHAT_SCOPE", "GIGACHAT_API_PERS")
+        self.verify_ssl = (
+            os.environ.get("GIGACHAT_VERIFY_SSL", "false").lower() == "true"
         )
 
-        return llm
+        self.temperature = float(os.environ.get("GIGACHAT_TEMPERATURE", "0.0"))
+        self.top_p = float(os.environ.get("GIGACHAT_TOP_P", "1.0"))
+
+        self.llm = self._init_llm()
+
+    def _init_llm(self) -> GigaChat:
+        m = GigaChat(
+            credentials=self.credentials,
+            scope=self.scope,
+            verify_ssl_certs=self.verify_ssl,
+            temperature=self.temperature,
+            top_p=self.top_p,
+        )
+        return m

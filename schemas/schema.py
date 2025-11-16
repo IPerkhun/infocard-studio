@@ -16,6 +16,7 @@ class DetectProductInput(BaseModel):
 
 
 class DetectProductOutput(BaseModel):
+    """Инструмент для определения класса изображения"""
     label: Label = Field(..., description="Класс габарита посуды")
 
 
@@ -24,6 +25,7 @@ class ImageGenOutput(BaseModel):
 
 
 class HeadersOutput(BaseModel):
+    """Генерация заголовков для карточки товара"""
     headers: List[str] = Field(..., min_items=4, max_items=4)
 
 
@@ -33,12 +35,12 @@ class UTPItem(BaseModel):
 
 
 class OutputLLM(BaseModel):
+    """Генерация текста для заполнения карточек товара"""
     title: str = Field(description="Общий заголовок карточки.")
     subtitle: str = Field(description="Подзаголовок карточки.")
     utp: List[UTPItem] = Field(
         min_length=8, max_length=8, description="Ровно 8 преимуществ с номерами 1..8."
     )
-
     utp_3_continue: str = Field(
         description="Короткое продолжение для пункта 3 (2–8 слов). Пример: «удобно одной рукой»"
     )
@@ -49,36 +51,14 @@ class OutputLLM(BaseModel):
         description="Короткое продолжение для пункта 5 (2–8 слов). Пример: «безопасно для всей семьи»"
     )
 
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "title": "Сковорода 24 см Current с антипригарным покрытием",
-                    "subtitle": "Grano серии Elite",
-                    "utp": [
-                        {"number": 1, "text": "Усиленный слой против царапин"},
-                        {"number": 2, "text": "Для всех видов плит"},
-                        {"number": 3, "text": "Click-System ручка с фиксацией"},
-                        {"number": 4, "text": "Мгновенный нагрев для экономии энергии"},
-                        {"number": 5, "text": "Гранитное покрытие безопасно для детей"},
-                        {"number": 6, "text": "Можно мыть в посудомоечной машине"},
-                        {"number": 7, "text": "Подходит для духовки до 230 °C"},
-                        {"number": 8, "text": "Удобная ручка с надёжной фиксацией"},
-                    ],
-                    "utp_3_continue": "удобно одной рукой",
-                    "utp_4_continue": "экономит время на готовке",
-                    "utp_5_continue": "безопасно для всей семьи",
-                }
-            ]
-        }
-    }
-
 
 class SpecsOutput(BaseModel):
+    """Сгенерированная спецификация товара"""
     text: str
 
 
 class DescriptionOutput(BaseModel):
+    """Сгенерированный текст карточки товара"""
     text: str
 
 

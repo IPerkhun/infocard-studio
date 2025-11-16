@@ -33,7 +33,6 @@ with OUTPUT.open("w", encoding="utf-8") as f:
 print(f"\n✅ {len(results)} результатов сохранено в {OUTPUT.resolve()}")
 
 import base64
-
 # %%
 import json
 import re
@@ -85,3 +84,27 @@ for payload in results:
     print(f"✅ {job_id}: сохранено {len(generated_images)} изображений")
 
 print("\n🎉 Все изображения сохранены в папку 'images/'")
+#%%
+from pprint import pprint
+
+from pipeline import ProductCardGeneration
+from schemas.schema import ProductCardResponse
+
+inp = {
+    "job_id": "34dece5bsdag-f4esdag4-440asdsad9-a5b8sdg-7f6d6012343521",
+    "product_sku": "5669878",
+    "product_name": "Сковорода гриль чугунная Доляна «Квадрат. Гриль», 26x26 см, съёмная деревянная ручка",
+    "product_properties": "|Цвет:Чёрный|Форма:Квадратная|Диаметр, см:28|Крышка:Нет|Материал:Чугун|Съёмная ручка:Да|Тип покрытия:Без покрытия|Тип плиты:Для индукционной плиты|Тип плиты:Для электрической плиты|Тип плиты:Для галогенной плиты|Тип плиты:Для газовой плиты|Тип плиты:Для стеклокерамической плиты|Капсульное дно:Нет|Вид сковороды:Сковорода-гриль|Можно мыть в посудомоечной машине:Нет|Особенность:Индукционная плита",
+    "product_photos": [
+      {
+        "image_position": 1,
+        "image_url": "https://goods-photos.static1-sima-land.com/items/564932/0/1600.jpg"
+      }
+    ]
+  }
+
+gen = ProductCardGeneration()
+payload = gen.run(inp)
+
+pprint(payload)
+# %%
