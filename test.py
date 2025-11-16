@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pipeline import ProductCardGeneration
 
-INPUT = Path("data/input.json")
+INPUT = Path("data/input_test.json")
 OUTPUT = Path("products_results.json")
 
 with INPUT.open("r", encoding="utf-8") as f:

@@ -30,29 +30,74 @@ PROMPT_DETECT_LMS = """
 """.strip()
 
 
-PROMPT_GENERATE_IMAGE_L = """Replace the background with a light kitchen scene without changing the original form of {product_name}. 
-Remove all text and keep the product untouched.
+PROMPT_GENERATE_IMAGE_L = """
+Replace the background with one of the following kitchen styles:
+- modern white cabinets
+- natural materials with matte green cabinets
+- modern kitchen with matte burgundy cabinets
+Add subtle Christmas atmosphere.
+Do not change the original form of {product_name}. Remove all text.
 """
 
 
-PROMPT_GENERATE_IMAGE_M = """Place {product_name} on a clean modern kitchen table. 
-Do not modify the product. 
-You may add one small food item or utensil for styling, but do not cover the product.
-Remove all text.
+PROMPT_GENERATE_IMAGE_M = """
+Replace the background with one of the following kitchen styles:
+- modern white cabinets
+- natural materials with matte green cabinets
+- modern kitchen with matte burgundy cabinets
+Add subtle Christmas atmosphere.
+Do not modify {product_name}. You may add one small food item or utensil, but do not cover the product. Remove all text.
 """
 
 
-PROMPT_GENERATE_IMAGE_S = """Place {product_name} on a simple neutral background suitable for product photos. 
-Do not change or extend the product in any way.
-Remove all text and keep the product untouched.
+PROMPT_GENERATE_IMAGE_S = """
+Replace the background with one of the following kitchen styles:
+- modern white cabinets
+- natural materials with matte green cabinets
+- modern kitchen with matte burgundy cabinets
+Add subtle Christmas atmosphere.
+Do not change or extend {product_name}. Remove all text.
 """
 
 
 PROMPT_GENERATE_ADDITIONAL_ANGLES = """
-Replace the background with a clean kitchen scene and show {product_name} from a different natural angle. 
-Do not change the product or reconstruct missing parts.
+Replace the background with one of the following kitchen styles and show {product_name} from a random angle (side, top, or low angle):
+- modern white cabinets
+- natural materials with matte green cabinets
+- modern kitchen with matte burgundy cabinets
+Add subtle Christmas atmosphere.
+Do not change or reconstruct the product.
 """
 
+
+PROMPT_VALIDATE_IMAGE_VL = """
+Опиши подробно, что изображено на фото.
+
+Товар, который должен присутствовать: {product_name}
+
+Особенно обрати внимание:
+- видно ли сам товар,
+- соответствует ли форма и структура товара ожидаемой,
+- нет ли сильных искажений, артефактов или ошибочного фона,
+- нет ли полностью однотонного тёмного или пустого фона.
+"""
+
+
+PROMPT_VALIDATE_IMAGE_QUALITY = """
+Ты оцениваешь качество фото товара для карточки маркетплейса.
+
+Товар: "{product_name}"
+
+Описание изображения от vision-модели:
+{vision_raw}
+
+Реши, подходит ли это фото для карточки товара.
+
+Если фото подходит, задай status = "OK".
+Если фото нужно перегенерировать, задай status = "BAD".
+
+Кратко объясни решение в поле reason (1–2 предложения).
+"""
 
 PROMPT_GENERATE_HEADERS = """
 На основании заголовка ниже придумай 1–4 похожих заголовка,

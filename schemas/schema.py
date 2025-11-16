@@ -17,6 +17,7 @@ class DetectProductInput(BaseModel):
 
 class DetectProductOutput(BaseModel):
     """Инструмент для определения класса изображения"""
+
     label: Label = Field(..., description="Класс габарита посуды")
 
 
@@ -26,6 +27,7 @@ class ImageGenOutput(BaseModel):
 
 class HeadersOutput(BaseModel):
     """Генерация заголовков для карточки товара"""
+
     headers: List[str] = Field(..., min_items=4, max_items=4)
 
 
@@ -36,6 +38,7 @@ class UTPItem(BaseModel):
 
 class OutputLLM(BaseModel):
     """Генерация текста для заполнения карточек товара"""
+
     title: str = Field(description="Общий заголовок карточки.")
     subtitle: str = Field(description="Подзаголовок карточки.")
     utp: List[UTPItem] = Field(
@@ -54,6 +57,7 @@ class OutputLLM(BaseModel):
 
 class SpecsOutput(BaseModel):
     """Сгенерированная спецификация товара"""
+
     text: str
 
 
@@ -65,6 +69,12 @@ class DescriptionOutput(BaseModel):
 class ProductPhoto(BaseModel):
     image_position: Optional[int] = None
     image_url: HttpUrl
+
+
+class ImageQualityOutput(BaseModel):
+    """Проверка качества изображения"""
+    status: Literal["OK", "BAD"]
+    reason: str
 
 
 class ProductData(BaseModel):

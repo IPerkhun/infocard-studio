@@ -1,3 +1,12 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+
 from typing import Dict, Type
 
 from langgraph.graph import END, StateGraph
@@ -16,6 +25,8 @@ from prompts.prompt import (
     PROMPT_GENERATE_IMAGE_M,
     PROMPT_GENERATE_IMAGE_S,
     PROMPT_GENERATE_SPECS,
+    PROMPT_VALIDATE_IMAGE_QUALITY,
+    PROMPT_VALIDATE_IMAGE_VL,
 )
 from schemas.schema import (
     AgentState,
@@ -25,8 +36,13 @@ from schemas.schema import (
     ImageGenOutput,
     OutputLLM,
     SpecsOutput,
+    ImageQualityOutput,
 )
-from tools.agent_tools import detect_product_tool, generate_images_tool
+from tools.agent_tools import (
+    detect_product_tool,
+    generate_images_tool,
+    inspect_generated_image_tool,
+)
 
 _LABEL_PROMPTS = {
     "L": PROMPT_GENERATE_IMAGE_L,
@@ -46,6 +62,7 @@ class ProductCardGeneration:
     def _normalize_photos(self, state: AgentState) -> AgentState:
         try:
             photos = state.input_data.get("product_photos") or []
+            logger.info("normalize_photos: received %d photos", len(photos))
 
             norm: list[dict] = []
             seen = set()
@@ -88,6 +105,12 @@ class ProductCardGeneration:
         need = state.result.get("need_variations", 0)
         photos = state.input_data.get("product_photos") or []
 
+        logger.info(
+            "augment_photos: need_variations=%d, current_photos=%d",
+            need,
+            len(photos),
+        )
+
         if need <= 0 or not photos:
             state.result["augment_prompt"] = ""
             return state
@@ -103,6 +126,13 @@ class ProductCardGeneration:
             clone = dict(photos[-1])
             clone["image_position"] = last_pos + i + 1
             augmented.append(clone)
+
+        logger.info(
+            "augment_photos: augmented %d photos, total=%d, added_positions=%s",
+            len(augmented),
+            len(state.input_data["product_photos"]),
+            [p["image_position"] for p in augmented],
+        )
 
         state.input_data["product_photos"] = photos + augmented
         return state
@@ -127,6 +157,8 @@ class ProductCardGeneration:
         det: DetectProductOutput = runnable.invoke(prompt)
 
         state.result["label"] = det.label
+
+        logger.info("detect_label: detected label=%s", det.label)
 
         return state
 
@@ -164,6 +196,116 @@ class ProductCardGeneration:
         ]
 
         state.result["generated_images"] = generated
+
+        logger.info(
+            "gen_background: generated_images_count=%d, positions=%s",
+            len(generated),
+            [g["image_position"] for g in generated],
+        )
+
+        return state
+
+    def _validate_images(self, state: AgentState) -> AgentState:
+        generated = state.result.get("generated_images") or []
+        if not generated:
+            return state
+
+        product_name = state.input_data.get("product_name", "товар")
+
+        label = state.result.get("label") or "M"
+        base_prompt = _LABEL_PROMPTS.get(label, PROMPT_GENERATE_IMAGE_M)
+        extra = state.result.get("augment_prompt") or ""
+        prompt_text = f"{base_prompt.format(product_name=product_name)} {extra}".strip()
+
+        photos = state.input_data.get("product_photos") or []
+        photos_with_url = [
+            p for p in photos if isinstance(p, dict) and p.get("image_url")
+        ]
+
+        if not photos_with_url:
+            return state
+
+        n = min(len(generated), len(photos_with_url))
+        generated = generated[:n]
+        photos_with_url = photos_with_url[:n]
+
+        new_generated = list(generated)
+
+        attempts = state.result.setdefault("regen_attempts", {})
+
+        logger.info(
+            "validate_images: start validation for %d images, label=%s, prompt=%r",
+            n,
+            label,
+            prompt_text,
+        )
+
+        for idx in range(n):
+            img_meta = generated[idx]
+            img_b64 = img_meta.get("image_base64") or ""
+            pos = img_meta.get("image_position")
+
+            if not img_b64:
+                continue
+
+            if attempts.get(pos, 0) >= 3:
+                continue
+
+            raw_vl_text = inspect_generated_image_tool.invoke(
+                {"image_base64": img_b64, "question": PROMPT_VALIDATE_IMAGE_VL.strip()}
+            )
+
+            logger.debug(
+                "validate_images: position=%s raw_vl_text=%s",
+                pos,
+                raw_vl_text,
+            )
+
+            prompt = PROMPT_VALIDATE_IMAGE_QUALITY.format(
+                product_name=product_name,
+                vision_raw=raw_vl_text,
+            )
+
+            runnable = self._so(ImageQualityOutput)
+            quality: ImageQualityOutput = runnable.invoke(prompt)
+
+            logger.info(
+                "validate_images: position=%s status=%s reason=%s attempts=%d",
+                pos,
+                quality.status,
+                quality.reason,
+                attempts.get(pos, 0),
+            )
+
+            if quality.status == "OK":
+                continue
+
+            src_url = photos_with_url[idx]["image_url"]
+
+            try:
+                regen_out: ImageGenOutput = generate_images_tool.invoke(
+                    {"product_photos": [src_url], "prompt": prompt_text}
+                )
+
+                attempts[pos] = attempts.get(pos, 0) + 1
+
+                if regen_out.generated_images:
+                    new_generated[idx] = {
+                        "image_position": pos,
+                        "image_base64": regen_out.generated_images[0] or "",
+                    }
+
+            except Exception:
+                attempts[pos] = attempts.get(pos, 0) + 1
+                continue
+
+        state.result["generated_images"] = new_generated
+
+        logger.info(
+            "validate_images: finished. regen_attempts=%s",
+            attempts,
+        )
+
         return state
 
     def _gen_characteristics_giga(self, state: AgentState) -> AgentState:
@@ -188,6 +330,9 @@ class ProductCardGeneration:
         headers = (out.headers or [])[:4]
         headers += [""] * (4 - len(headers))
         state.result["headers"] = headers
+
+        logger.info("gen_headers: headers=%s", headers)
+
         return state
 
     def _gen_specs(self, state: AgentState) -> AgentState:
@@ -200,6 +345,16 @@ class ProductCardGeneration:
         out: SpecsOutput = runnable.invoke(prompt)
 
         state.result["specs_text"] = out.text or ""
+
+        logger.info(
+            "gen_specs: specs_text_preview=%r",
+            (
+                (state.result["specs_text"][:120] + "...")
+                if state.result["specs_text"]
+                else ""
+            ),
+        )
+
         return state
 
     def _gen_description(self, state: AgentState) -> AgentState:
@@ -209,6 +364,8 @@ class ProductCardGeneration:
             for u in ch.get("utp", [])
             if isinstance(u, dict) and "number" in u and "text" in u
         )
+
+        print(f"Залупа {utp_lines}")
 
         prompt = PROMPT_GENERATE_DESCRIPTION.format(
             title=ch.get("title", ""),
@@ -222,6 +379,12 @@ class ProductCardGeneration:
         desc_text = (out.text or "").strip()
 
         state.result["description_text"] = desc_text
+
+        logger.info(
+            "gen_description: description_preview=%r",
+            (desc_text[:120] + "...") if desc_text else "",
+        )
+
         return state
 
     def _build_graph(self):
@@ -231,6 +394,7 @@ class ProductCardGeneration:
         g.add_node("augment_photos", self._augment_photos)
         g.add_node("detect_label", self._detect_label)
         g.add_node("gen_background", self._gen_background)
+        g.add_node("validate_images", self._validate_images)
         g.add_node("gen_characteristics_giga", self._gen_characteristics_giga)
         g.add_node("gen_headers", self._gen_headers)
         g.add_node("gen_specs", self._gen_specs)
@@ -241,7 +405,8 @@ class ProductCardGeneration:
         g.add_edge("normalize_photos", "augment_photos")
         g.add_edge("augment_photos", "detect_label")
         g.add_edge("detect_label", "gen_background")
-        g.add_edge("gen_background", "gen_characteristics_giga")
+        g.add_edge("gen_background", "validate_images")
+        g.add_edge("validate_images", "gen_characteristics_giga")
         g.add_edge("gen_characteristics_giga", "gen_headers")
         g.add_edge("gen_headers", "gen_specs")
         g.add_edge("gen_specs", "gen_description")
@@ -316,4 +481,3 @@ class ProductCardGeneration:
     def run(self, input_data: Dict) -> dict:
         state = self.run_state(input_data)
         return self._build_payload(state=state)
-        
