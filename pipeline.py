@@ -21,13 +21,23 @@ from prompts.prompt import (
     PROMPT_GENERATE_CHARACTERISTICS,
     PROMPT_GENERATE_DESCRIPTION,
     PROMPT_GENERATE_HEADERS,
-    PROMPT_GENERATE_IMAGE_L,
-    PROMPT_GENERATE_IMAGE_M,
-    PROMPT_GENERATE_IMAGE_S,
+    PROMPT_GENERATE_IMAGE_L_1,
+    PROMPT_GENERATE_IMAGE_L_2,
+    PROMPT_GENERATE_IMAGE_L_3,
+    PROMPT_GENERATE_IMAGE_L_4,
+    PROMPT_GENERATE_IMAGE_M_1,
+    PROMPT_GENERATE_IMAGE_M_2,
+    PROMPT_GENERATE_IMAGE_M_3,
+    PROMPT_GENERATE_IMAGE_M_4,
+    PROMPT_GENERATE_IMAGE_S_1,
+    PROMPT_GENERATE_IMAGE_S_2,
+    PROMPT_GENERATE_IMAGE_S_3,
+    PROMPT_GENERATE_IMAGE_S_4,
     PROMPT_GENERATE_SPECS,
     PROMPT_VALIDATE_IMAGE_QUALITY,
     PROMPT_VALIDATE_IMAGE_VL,
 )
+
 from schemas.schema import (
     AgentState,
     DescriptionOutput,
@@ -45,9 +55,24 @@ from tools.agent_tools import (
 )
 
 _LABEL_PROMPTS = {
-    "L": PROMPT_GENERATE_IMAGE_L,
-    "M": PROMPT_GENERATE_IMAGE_M,
-    "S": PROMPT_GENERATE_IMAGE_S,
+    "L": {
+        1: PROMPT_GENERATE_IMAGE_L_1,
+        2: PROMPT_GENERATE_IMAGE_L_2,
+        3: PROMPT_GENERATE_IMAGE_L_3,
+        4: PROMPT_GENERATE_IMAGE_L_4,
+    },
+    "M": {
+        1: PROMPT_GENERATE_IMAGE_M_1,
+        2: PROMPT_GENERATE_IMAGE_M_2,
+        3: PROMPT_GENERATE_IMAGE_M_3,
+        4: PROMPT_GENERATE_IMAGE_M_4,
+    },
+    "S": {
+        1: PROMPT_GENERATE_IMAGE_S_1,
+        2: PROMPT_GENERATE_IMAGE_S_2,
+        3: PROMPT_GENERATE_IMAGE_S_3,
+        4: PROMPT_GENERATE_IMAGE_S_4,
+    },
 }
 
 
@@ -138,27 +163,22 @@ class ProductCardGeneration:
         return state
 
     def _detect_label(self, state: AgentState) -> AgentState:
-        photos = state.input_data.get("product_photos") or []
-
+        photos = state.input_data["product_photos"]
         first = photos[0]
-        image_url = first.get("image_url") if isinstance(first, dict) else first
+        image_url = first["image_url"] if isinstance(first, dict) else first
 
-        raw_vl_text = detect_product_tool.invoke(
+        vision_raw = detect_product_tool.invoke(
             {"image_url": image_url, "question": PROMPT_DETECT_OBJECT}
         )
 
-        prompt = PROMPT_DETECT_LMS.format(
-            product_name=state.input_data.get("product_name", ""),
-            product_properties=state.input_data.get("product_properties", ""),
-            vision_raw=raw_vl_text,
-        )
+        prompt = PROMPT_DETECT_LMS.format(vision_raw=vision_raw)
 
         runnable = self._so(DetectProductOutput)
         det: DetectProductOutput = runnable.invoke(prompt)
 
-        state.result["label"] = det.label
+        logger.info("label=%s", det)
 
-        logger.info("detect_label: detected label=%s", det.label)
+        state.result["label"] = det.label
 
         return state
 
@@ -168,32 +188,66 @@ class ProductCardGeneration:
             state.result["generated_images"] = []
             return state
 
-        base_prompt = _LABEL_PROMPTS.get(label, PROMPT_GENERATE_IMAGE_M)
         product_name = state.input_data.get("product_name", "item")
         extra = state.result.get("augment_prompt") or ""
-        prompt_text = f"{base_prompt.format(product_name=product_name)} {extra}".strip()
 
         photos = state.input_data.get("product_photos") or []
         photos_with_url = [
             p for p in photos if isinstance(p, dict) and p.get("image_url")
         ]
-        urls = [p["image_url"] for p in photos_with_url]
 
-        if not urls:
+        if not photos_with_url:
             state.result["generated_images"] = []
             return state
 
-        img_out: ImageGenOutput = generate_images_tool.invoke(
-            {"product_photos": urls, "prompt": prompt_text}
+        label_prompts = _LABEL_PROMPTS.get(label) or _LABEL_PROMPTS["M"]
+
+        generated = []
+
+        logger.info(
+            "gen_background: start per-image generation, label=%s, photos=%d",
+            label,
+            len(photos_with_url),
         )
 
-        generated = [
-            {
-                "image_position": meta.get("image_position"),
-                "image_base64": b64 or "",
-            }
-            for meta, b64 in zip(photos_with_url, img_out.generated_images)
-        ]
+        for meta in photos_with_url:
+            pos = int(meta.get("image_position", 1))
+            src_url = meta["image_url"]
+
+            base_prompt = label_prompts.get(pos, label_prompts[1])
+            prompt_text = f"{base_prompt.format(product_name=product_name)} {extra}".strip()
+
+            try:
+                img_out: ImageGenOutput = generate_images_tool.invoke(
+                    {"product_photos": [src_url], "prompt": prompt_text}
+                )
+                img_b64 = (img_out.generated_images or [""])[0] or ""
+
+                generated.append(
+                    {
+                        "image_position": pos,
+                        "image_base64": img_b64,
+                    }
+                )
+
+                logger.info(
+                    "gen_background: generated image for position=%d (len_b64=%d)",
+                    pos,
+                    len(img_b64),
+                )
+
+            except Exception as e:
+                logger.exception(
+                    "gen_background: failed to generate image for position=%d: %s",
+                    pos,
+                    e,
+                )
+                generated.append(
+                    {
+                        "image_position": pos,
+                        "image_base64": "",
+                    }
+                )
 
         state.result["generated_images"] = generated
 
@@ -205,6 +259,7 @@ class ProductCardGeneration:
 
         return state
 
+
     def _validate_images(self, state: AgentState) -> AgentState:
         generated = state.result.get("generated_images") or []
         if not generated:
@@ -213,10 +268,6 @@ class ProductCardGeneration:
         product_name = state.input_data.get("product_name", "товар")
 
         label = state.result.get("label") or "M"
-        base_prompt = _LABEL_PROMPTS.get(label, PROMPT_GENERATE_IMAGE_M)
-        extra = state.result.get("augment_prompt") or ""
-        prompt_text = f"{base_prompt.format(product_name=product_name)} {extra}".strip()
-
         photos = state.input_data.get("product_photos") or []
         photos_with_url = [
             p for p in photos if isinstance(p, dict) and p.get("image_url")
@@ -230,20 +281,20 @@ class ProductCardGeneration:
         photos_with_url = photos_with_url[:n]
 
         new_generated = list(generated)
-
         attempts = state.result.setdefault("regen_attempts", {})
 
+        label_prompts = _LABEL_PROMPTS.get(label) or _LABEL_PROMPTS["M"]
+
         logger.info(
-            "validate_images: start validation for %d images, label=%s, prompt=%r",
+            "validate_images: start validation for %d images, label=%s",
             n,
             label,
-            prompt_text,
         )
 
         for idx in range(n):
             img_meta = generated[idx]
             img_b64 = img_meta.get("image_base64") or ""
-            pos = img_meta.get("image_position")
+            pos = int(img_meta.get("image_position", idx + 1))
 
             if not img_b64:
                 continue
@@ -282,6 +333,10 @@ class ProductCardGeneration:
 
             src_url = photos_with_url[idx]["image_url"]
 
+            base_prompt = label_prompts.get(pos, label_prompts[1])
+            extra = state.result.get("augment_prompt") or ""
+            prompt_text = f"{base_prompt.format(product_name=product_name)} {extra}".strip()
+
             try:
                 regen_out: ImageGenOutput = generate_images_tool.invoke(
                     {"product_photos": [src_url], "prompt": prompt_text}
@@ -307,6 +362,7 @@ class ProductCardGeneration:
         )
 
         return state
+
 
     def _gen_characteristics_giga(self, state: AgentState) -> AgentState:
         prompt = PROMPT_GENERATE_CHARACTERISTICS.format(
@@ -364,8 +420,6 @@ class ProductCardGeneration:
             for u in ch.get("utp", [])
             if isinstance(u, dict) and "number" in u and "text" in u
         )
-
-        print(f"Залупа {utp_lines}")
 
         prompt = PROMPT_GENERATE_DESCRIPTION.format(
             title=ch.get("title", ""),

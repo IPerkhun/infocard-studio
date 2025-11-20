@@ -1,61 +1,107 @@
 PROMPT_DETECT_OBJECT = (
-    "Ты — визуальный классификатор изображений. "
-    "Посмотри на картинку и определи, какой объект изображён. "
-    "Выбери ровно одно слово из списка: "
-    "КАСТРЮЛЯ, КОРОБКА, СТАКАН, ЧАШКА, ПУСТОЙ ФОН. "
-    "Не добавляй пояснений, не используй других слов. "
-    "Ответь строго одним словом из списка."
+    "Ты — визуальный классификатор изображений."
+    "Посмотри на картинку и определи, какой объект изображён."
+    "Опиши фотографию, что на ней находится"
 )
 
 PROMPT_DETECT_LMS = """
-Ты обязан вернуть ответ строго в формате JSON: {{ "label": "<L|M|S|NONE>" }} без каких-либо комментариев до или после.
+Описание с картинки (vision-модель):
+{vision_raw}
 
 Классы:
-- L (Large): крупная посуда — сковороды, кастрюли, сотейники и т.п. (реальный 3D-объект на фото).
-- M (Medium): средняя посуда — тарелки, миски, блюда, блюдца (реальный 3D-объект).
-- S (Small): малая посуда и питьё — кружки, стаканы, чашки, рюмки (реальный 3D-объект).
-- NONE: если на изображении указана коробка, человек
+- L (Large): крупная посуда — сковороды, кастрюли, сотейники.
+- M (Medium): средняя посуда — тарелки, миски, блюда, блюдца.
+- S (Small): малая посуда и питьё — кружки, стаканы, чашки, рюмки.
+- NONE: если на изображении коробка, человек или посуда не видна.
 
-Критически важно:
-- Классифицируй как L/M/S ТОЛЬКО если посуда физически присутствует в кадре как 3D-объект (объём, собственные отражения/блики, тени на окружающих поверхностях).
-- Если видишь коробку/упаковку, даже если на ней напечатана кастрюля/сковорода/тарелка — это НЕ реальная посуда → метка "NONE".
-
-Примеры:
-- Фото реальной кастрюли на плите/столе → {{ "label": "L" }}
-- Фото реальной тарелки на столе → {{ "label": "M" }}
-- Фото реальной кружки на столе → {{ "label": "S" }}
-- Фото коробки → {{ "label": "NONE" }}
-
-Ответь только JSON, строго по схеме.
+Определи наиболее подходящий класс.
+Верни только нужное значение.
 """.strip()
 
 
-PROMPT_GENERATE_IMAGE_L = """
-Replace the background with one of the following kitchen styles:
-- modern white cabinets
-- natural materials with matte green cabinets
-- modern kitchen with matte burgundy cabinets
-Add subtle Christmas atmosphere.
+PROMPT_GENERATE_IMAGE_L_1 = """
+Replace the background with a cozy holiday kitchen in light beige tones.
+Include soft warm bokeh from garland lights, blurred white cabinets, and subtle festive décor.
+The background MUST be strongly Christmas-themed: ornaments, warm lights, evergreen branches.
+Do not alter the shape of {product_name}. Remove all text.
+"""
+
+PROMPT_GENERATE_IMAGE_L_2 = """
+Replace the background with a warm festive living room in a cream-gold palette.
+Use blurred Christmas trees, golden garland bokeh, beige walls, and soft evening light.
+The background MUST be strongly Christmas-themed and decorative.
 Do not change the original form of {product_name}. Remove all text.
 """
 
+PROMPT_GENERATE_IMAGE_L_3 = """
+Replace the background with a bright minimalist kitchen with soft daylight and clean beige-cream tones.
+Add subtle golden garland bokeh on evergreen branches and a modern Christmas aesthetic.
+The background MUST be strongly Christmas-themed.
+Do not modify the shape of {product_name}. Remove all text.
+"""
 
-PROMPT_GENERATE_IMAGE_M = """
-Replace the background with one of the following kitchen styles:
-- modern white cabinets
-- natural materials with matte green cabinets
-- modern kitchen with matte burgundy cabinets
-Add subtle Christmas atmosphere.
+PROMPT_GENERATE_IMAGE_L_4 = """
+Replace the background with a warm sunlit kitchen: green matte cabinets, wooden countertops, and rustic elements.
+Add two blurred Christmas trees and golden bokeh from holiday garlands.
+The background MUST be strongly Christmas-themed and cozy.
+Do not alter the original shape of {product_name}. Remove all text.
+"""
+
+
+PROMPT_GENERATE_IMAGE_M_1 = """
+Replace the background with a top-down cozy holiday scene.
+Use warm soft light on a wooden surface with: a dark green linen napkin, pine branch, cones, a golden jingle bell, and a wooden star.
+The background MUST be strongly Christmas-themed.
+Do not modify {product_name}. You may add one small food item or utensil, but do not cover the product. Remove all text.
+"""
+
+PROMPT_GENERATE_IMAGE_M_2 = """
+Replace the background with a modern fine-dining setting.
+Use a dark wooden table, soft side light, shallow depth of field; two red wine glasses, a gray linen napkin, matte black utensils, and a concrete stand with porous black stones.
+Ensure a subtle Christmas atmosphere through warm festive accents.
+Do not modify {product_name}. You may add one small food item or utensil, but do not cover the product. Remove all text.
+"""
+
+PROMPT_GENERATE_IMAGE_M_3 = """
+Replace the background with a minimalist fine-dining flat lay.
+Use a white linen tablecloth, rose-gold utensils, a gray napkin, a small matte graphite plate with an olive branch, and smoky-pink glasses.
+Soft diffused daylight and a muted neutral palette are required; add gentle Christmas elements.
+Do not modify {product_name}. You may add one small food item or utensil, but do not cover the product. Remove all text.
+"""
+
+PROMPT_GENERATE_IMAGE_M_4 = """
+Replace the background with a cozy festive living room.
+Include a lit fireplace with a pine garland, a blurred Christmas tree with golden bokeh lights, and warm evening illumination on cream-beige walls.
+The background MUST be strongly Christmas-themed.
 Do not modify {product_name}. You may add one small food item or utensil, but do not cover the product. Remove all text.
 """
 
 
-PROMPT_GENERATE_IMAGE_S = """
-Replace the background with one of the following kitchen styles:
-- modern white cabinets
-- natural materials with matte green cabinets
-- modern kitchen with matte burgundy cabinets
-Add subtle Christmas atmosphere.
+PROMPT_GENERATE_IMAGE_S_1 = """
+Replace the background with a cozy festive kitchen in warm evening tones and shallow depth of field.
+Include golden garland bokeh on evergreen branches, softly blurred white cabinets and stove, and a red Christmas stocking on the wall.
+Use a cream-beige palette with soft diffused warm light. Strong Christmas atmosphere required.
+Do not change or extend {product_name}. Remove all text.
+"""
+
+PROMPT_GENERATE_IMAGE_S_2 = """
+Replace the background with a hygge-inspired living room with fine bokeh.
+Use a light-wood round coffee table with lit candles in glass holders; in the back, a blurred stone-faced fireplace with a pine garland and a blurred Christmas tree with golden bokeh.
+Combine warm firelight with soft daylight from the right. Calm minimalist Christmas mood.
+Do not change or extend {product_name}. Remove all text.
+"""
+
+PROMPT_GENERATE_IMAGE_S_3 = """
+Replace the background with a soft-bokeh modern kitchen: matte black shaker cabinets, white countertop, white subway tiles, a black curved faucet, and a built-in oven with metal accents.
+Add gentle daylight from the left and subtle golden garland bokeh on evergreen branches.
+Ensure a clean, modern, Christmas-themed atmosphere.
+Do not change or extend {product_name}. Remove all text.
+"""
+
+PROMPT_GENERATE_IMAGE_S_4 = """
+Replace the background with a festive kitchen in soft bokeh: green cabinets, a cream countertop, a pine garland, and a blurred Christmas tree with golden bokeh and red ornaments.
+Use warm evening light and a calm cream-green palette with shallow depth of field.
+The background MUST be distinctly Christmas-themed.
 Do not change or extend {product_name}. Remove all text.
 """
 
@@ -65,7 +111,9 @@ Replace the background with one of the following kitchen styles and show {produc
 - modern white cabinets
 - natural materials with matte green cabinets
 - modern kitchen with matte burgundy cabinets
-Add subtle Christmas atmosphere.
+
+The background MUST be strongly Christmas-themed: rich holiday decorations, garlands, warm lights, Christmas tree elements, or festive ornaments. This requirement is mandatory.
+
 Do not change or reconstruct the product.
 """
 
@@ -187,36 +235,63 @@ PROMPT_PRODUCT_DESCRIPTION = """
 
 PROMPT_GENERATE_CHARACTERISTICS = """
 Ты — генератор структурированных данных для карточки товара. 
-Твоя задача: вернуть ОДИН валидный JSON-объект строго по схеме OutputLLM. Любые комментарии, пояснения, markdown, текст вне JSON — ЗАПРЕЩЕНЫ.
-
 Представь, что наш покупатель — русская домохозяйка, которая ищет товары на маркетплейсе, чтобы купить товары для кухни и дома.
-Сформируй для неё UTP (уникальные торговые преимущества) на основе характеристик товара так, чтобы, увидев их, она захотела купить. Помни эти UTP потом будут наложены на картинки (слайды) с товаром в виде инфографики, поэтому опиши их, чтобы смысл преимущества был понятен носителю русского языка — фразы должны быть связными и со смыслом.
+Сформируй для неё title, subtitle и UTP (уникальные торговые преимущества) на основе характеристик товара так, чтобы, увидев их, она захотела купить. Помни эти UTP потом будут наложены на картинки (слайды) с товаром в виде инфографики, поэтому опиши их, чтобы смысл преимущества был понятен носителю русского языка — фразы должны быть связными и со смыслом.
 
 Входные данные:
 - Название товара: {product_name}
 - Свойства/описание: {product_properties}
 
-Требуемая схема OutputLLM:
-- title: строка. Ровно одно слово — базовое наименование предмета (существительное в именительном падеже). Примеры: «Кастрюля», «Сковорода», «Чайник». Без брендов, размеров, кавычек, чисел и дополнительных слов.
-- subtitle: строка. «Бренд и серия» в кавычках + размер/объём, если есть. Примеры: «"Grano Elite", 24 см», «"Current", 2.5 л».
-- utp: массив из РОВНО 8 объектов вида {{ "number": <целое 1..8>, "text": "<НЕ БОЛЕЕ 3-х слов>" }}.
-  - number: целое 1..8 по порядку без пропусков.
-  - text: короткая, ёмкая фраза (5–12 слов), на русском, без эмодзи и markdown.
-  - УТП не дублируют друг друга по смыслу, не повторяют title/subtitle, не содержат брендовых/юридически рискованных утверждений («лучший», «№1») и недоказуемых метрик.
-- utp_3_continue, utp_4_continue, utp_5_continue: строка, НЕ БОЛЕЕ 2-х СЛОВ, продолжает мысль соответствующего UTP (3, 4, 5). Не повторять текст UTP.
+1) title — строка.
+   - Ровно ОДНО слово — базовое наименование предмета.
+   - Существительное в именительном падеже.
+   - Без брендов, размеров, кавычек, чисел и дополнительных слов.
+   Примеры: "Кастрюля", "Сковорода", "Чайник".
+
+2) subtitle — строка.
+   - "Бренд и серия" в кавычках + размер/объём, если есть.
+   Примеры: "\"Grano Elite\", 24 см", "\"Current\", 2.5 л".
+
+3) utp — массив из РОВНО 8 объектов: {{"number": <1..8>, "text": "<строка>"}}.
+
+Правила для поля text:
+
+ОБЯЗАТЕЛЬНО:
+- Длина строго 2-4 слова.
+- Никаких пояснений, нумерации, двоеточий, подзаголовков. 
+- Строго одна связная фраза.
+
+СМЫСЛ:
+- Преимущество должно быть понятным русской домохозяйке («что облегчает?», «что экономит?», «что упрощает уход?»).
+- Запрещены: штампы, общие слова без конкретики, абстракции.
+- Запрещена маркетинговая ложь: “лучший”, “идеальный”, “самый”, “№1”, “премиальный”, “эксклюзивный”.
+- Запрещены сравнения: “лучше”, “быстрее”, “выше”, “чем другие”.
+
+ОГРАНИЧЕНИЯ:
+- НЕ повторяем title или subtitle.
+- НЕ повторяем одни и те же слова в пределах одного UTP.
+- Все 8 UTP ДОЛЖНЫ быть разными по смыслу.
+
+4) utp_3_continue, utp_4_continue, utp_5_continue — строки.
+
+ОБЯЗАТЕЛЬНО:
+- Длина строго 1–2 слова. Если фраза содержит >2 слов — она считается НЕДОПУСТИМОЙ и должна быть пересоздана.
+- Продолжение — это короткое уточнение, которое усиливает смысл UTP, но НЕ дублирует его содержательно.
+- Продолжение НЕ может повторять НИ ОДНО слово из соответствующего UTP (даже в другой форме).
+- НЕЛЬЗЯ использовать пустые абстракции (“качественно”, “удобно”, “надёжно”, “красиво”, “хорошо”).
+- Все три продолжения должны различаться по смыслу между собой.
 
 ВАЖНО:
-1) Ответить СТРОГО одним JSON-объектом. Никаких пояснений, преамбул, кода, комментариев и подписи модели.
-2) Только UTF-8, только двойные кавычки.
-3) Заполняй все обязательные поля. Если информации нет — подбери нейтральную, правдоподобную формулировку без ложных утверждений.
-4) Не используй бренд в title. Бренд и серия — ТОЛЬКО в subtitle в кавычках.
-5) Без CAPSLOCK, без знаков «!» более одного, без смайлов, без markdown.
-6) Размер текста в utp НЕ БОЛЕЕ ЧЕТЫРЁХ СЛОВ
+1) Все поля (title, subtitle, все 8 utp, utp_3_continue, utp_4_continue, utp_5_continue) обязательны.
+2) Никаких брендов в title. Бренд — только в subtitle.
+3) Никаких повторов UTP между собой и внутри одного UTP.
+4) Продолжения (utp_3_continue, utp_4_continue, utp_5_continue) НЕ повторяют слова UTP и НЕ дублируют друг друга.
+5) Если данных мало, используй нейтральные, правдоподобные формулировки без выдуманных фактов.
 
-Пример целевого формата (сохрани двойные кавычки и структуру, это ОБРАЗЕЦ ФОРМАТА, а не подсказка по содержанию):
+Пример целевого формата (ОБРАЗЕЦ СТРУКТУРЫ, а не подсказка по содержанию, НЕЛЬЗЯ копировать текст содержательно):
 
 {{
-  "title": "Только базовое наименование (одно существительное, например «Кастрюля»)",
+  "title": "Только базовое наименование (одно существительное, например \"Кастрюля\")",
   "subtitle": "Бренд и серия в кавычках, с размером или объёмом, если есть",
   "utp": [
     {{"number": 1, "text": "UTP-1"}},
@@ -228,9 +303,9 @@ PROMPT_GENERATE_CHARACTERISTICS = """
     {{"number": 7, "text": "UTP-7"}},
     {{"number": 8, "text": "UTP-8"}}
   ],
-  "utp_3_continue": "Продолжение для UTP-3",
-  "utp_4_continue": "Продолжение для UTP-4",
-  "utp_5_continue": "Продолжение для UTP-5"
+  "utp_3_continue": "Пример продолжения для UTP-3",
+  "utp_4_continue": "Пример продолжения для UTP-4",
+  "utp_5_continue": "Пример продолжения для UTP-5"
 }}
 """
 
@@ -258,7 +333,7 @@ PROMPT_GENERATE_SPECS = """
 """.strip()
 
 PROMPT_GENERATE_DESCRIPTION = """
-Сформируй красивое, плавное описание товара (до 2000 символов) для размещения под картинками карточки.
+Сформируй красивое, плавное и содержательное описание товара (до 2000 символов) для размещения под картинками карточки.
 Целевая аудитория — домохозяйки. Пиши по делу, без воды, с выгодами и мягкими триггерами.
 
 Входные данные:
@@ -267,13 +342,12 @@ PROMPT_GENERATE_DESCRIPTION = """
 - УТП (нумерованные строки):
 {utp_lines}
 
-Подсказка по фактам (не копируй дословно, используй как базу):
-{specs_text}
+- Характеристики товара: {specs_text}
 
 Требования к выводу:
 - Единый связный текст в несколько абзацев.
 - Без списков, без нумерации, без markdown.
-- Без призывов «покупайте сейчас», без скидок.
+- Без призывов к покупке, без скидок.
 - До 2000 символов.
-
+- Не менее 1000 символов.
 """.strip()

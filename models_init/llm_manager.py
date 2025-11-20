@@ -16,6 +16,7 @@ class LLMManager:
 
         self.temperature = float(os.environ.get("GIGACHAT_TEMPERATURE", "0.0"))
         self.top_p = float(os.environ.get("GIGACHAT_TOP_P", "1.0"))
+        self.model = os.environ.get("GIGACHAT_MODEL")
 
         self.llm = self._init_llm()
 
@@ -26,5 +27,6 @@ class LLMManager:
             verify_ssl_certs=self.verify_ssl,
             temperature=self.temperature,
             top_p=self.top_p,
+            model=self.model
         )
         return m
