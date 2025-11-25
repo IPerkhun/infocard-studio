@@ -38,21 +38,12 @@ class UTPItem(BaseModel):
 
 class OutputLLM(BaseModel):
     """Генерация текста для заполнения карточек товара"""
-
-    title: str = Field(description="Общий заголовок карточки.")
-    subtitle: str = Field(description="Подзаголовок карточки.")
-    utp: List[UTPItem] = Field(
-        min_length=8, max_length=8, description="Ровно 8 преимуществ с номерами 1..8."
-    )
-    utp_3_continue: str = Field(
-        description="Короткое продолжение для пункта 3 (2–8 слов). Пример: «удобно одной рукой»"
-    )
-    utp_4_continue: str = Field(
-        description="Короткое продолжение для пункта 4 (2–8 слов). Пример: «экономит время на готовке»"
-    )
-    utp_5_continue: str = Field(
-        description="Короткое продолжение для пункта 5 (2–8 слов). Пример: «безопасно для всей семьи»"
-    )
+    title: str
+    subtitle: str
+    utp: List[str] = Field(min_length=8, max_length=8)
+    utp_3_continue: str
+    utp_4_continue: str
+    utp_5_continue: str
 
 
 class SpecsOutput(BaseModel):

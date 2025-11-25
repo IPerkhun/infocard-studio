@@ -215,7 +215,9 @@ class ProductCardGeneration:
             src_url = meta["image_url"]
 
             base_prompt = label_prompts.get(pos, label_prompts[1])
-            prompt_text = f"{base_prompt.format(product_name=product_name)} {extra}".strip()
+            prompt_text = (
+                f"{base_prompt.format(product_name=product_name)} {extra}".strip()
+            )
 
             try:
                 img_out: ImageGenOutput = generate_images_tool.invoke(
@@ -258,7 +260,6 @@ class ProductCardGeneration:
         )
 
         return state
-
 
     def _validate_images(self, state: AgentState) -> AgentState:
         generated = state.result.get("generated_images") or []
@@ -335,7 +336,9 @@ class ProductCardGeneration:
 
             base_prompt = label_prompts.get(pos, label_prompts[1])
             extra = state.result.get("augment_prompt") or ""
-            prompt_text = f"{base_prompt.format(product_name=product_name)} {extra}".strip()
+            prompt_text = (
+                f"{base_prompt.format(product_name=product_name)} {extra}".strip()
+            )
 
             try:
                 regen_out: ImageGenOutput = generate_images_tool.invoke(
@@ -363,31 +366,40 @@ class ProductCardGeneration:
 
         return state
 
-
     def _gen_characteristics_giga(self, state: AgentState) -> AgentState:
+        product_name = state.input_data.get("product_name", "")
+        product_properties = state.input_data.get("product_properties") or ""
+
         prompt = PROMPT_GENERATE_CHARACTERISTICS.format(
-            product_name=state.input_data.get("product_name", ""),
-            product_properties=state.input_data.get("product_properties") or "",
+            product_name=product_name,
+            product_properties=product_properties,
         )
 
         runnable = self._so(OutputLLM)
+
         out: OutputLLM = runnable.invoke(prompt)
 
-        state.result["characteristics"] = out.model_dump()
+        logger.info("УТП ЕБАНЫЕ: headers=%s", out)
+
+        state.result["characteristics"] = out
+
         return state
 
     def _gen_headers(self, state: AgentState) -> AgentState:
-        title = (state.result.get("characteristics") or {}).get("title", "")
+        ch = state.result.get("characteristics")
+
+        title = ch.title if ch else ""
+
         prompt = PROMPT_GENERATE_HEADERS.format(title=title)
 
         runnable = self._so(HeadersOutput)
         out: HeadersOutput = runnable.invoke(prompt)
 
-        headers = (out.headers or [])[:4]
-        headers += [""] * (4 - len(headers))
+        headers = (out.headers or [])[:1]
+        headers += [""] * (1 - len(headers))
         state.result["headers"] = headers
 
-        logger.info("gen_headers: headers=%s", headers)
+        logger.info("ХЕДЕРЫ: %s", headers)
 
         return state
 
@@ -403,7 +415,7 @@ class ProductCardGeneration:
         state.result["specs_text"] = out.text or ""
 
         logger.info(
-            "gen_specs: specs_text_preview=%r",
+            "СПЕКИ=%r",
             (
                 (state.result["specs_text"][:120] + "...")
                 if state.result["specs_text"]
@@ -414,16 +426,19 @@ class ProductCardGeneration:
         return state
 
     def _gen_description(self, state: AgentState) -> AgentState:
-        ch = state.result.get("characteristics") or {}
+        ch = state.result.get("characteristics")
+        if ch is None:
+            state.result["description_text"] = ""
+            return state
+
+        # utp — список строк
         utp_lines = "\n".join(
-            f"УТП {u['number']}: {u['text']}"
-            for u in ch.get("utp", [])
-            if isinstance(u, dict) and "number" in u and "text" in u
+            f"УТП {i}: {text}" for i, text in enumerate(ch.utp, start=1)
         )
 
         prompt = PROMPT_GENERATE_DESCRIPTION.format(
-            title=ch.get("title", ""),
-            subtitle=ch.get("subtitle", ""),
+            title=ch.title,
+            subtitle=ch.subtitle,
             utp_lines=utp_lines,
             specs_text=state.result.get("specs_text", ""),
         )
@@ -475,24 +490,38 @@ class ProductCardGeneration:
         label = "M" if raw_label == "NONE" else raw_label
         prefix = label.lower()
 
-        ch = state.result.get("characteristics") or {}
-        utp_list = ch.get("utp", []) or []
+        ch = state.result.get("characteristics")
+
+        title = ""
+        subtitle = ""
+        utp_list: list[str] = []
+        utp_3_continue = ""
+        utp_4_continue = ""
+        utp_5_continue = ""
+
+        if ch is not None:
+            title = ch.title
+            subtitle = ch.subtitle
+            utp_list = ch.utp or []
+            utp_3_continue = ch.utp_3_continue
+            utp_4_continue = ch.utp_4_continue
+            utp_5_continue = ch.utp_5_continue
 
         def utp(i: int) -> str:
             idx = i - 1
-            return utp_list[idx]["text"] if 0 <= idx < len(utp_list) else ""
+            return utp_list[idx] if 0 <= idx < len(utp_list) else ""
 
         text_block = {
-            f"{prefix}-1-slide-title": ch.get("title", "") or "",
-            f"{prefix}-1-slide-subtitle": ch.get("subtitle", "") or "",
+            f"{prefix}-1-slide-title": title,
+            f"{prefix}-1-slide-subtitle": subtitle,
             f"{prefix}-1-slide-utp-1": utp(1),
             f"{prefix}-1-slide-utp-2": utp(2),
             f"{prefix}-2-slide-utp-3": utp(3),
-            f"{prefix}-2-slide-utp-3-continue": ch.get("utp_3_continue", "") or "",
+            f"{prefix}-2-slide-utp-3-continue": utp_3_continue,
             f"{prefix}-3-slide-utp-4": utp(4),
-            f"{prefix}-3-slide-utp-4-continue": ch.get("utp_4_continue", "") or "",
+            f"{prefix}-3-slide-utp-4-continue": utp_4_continue,
             f"{prefix}-3-slide-utp-5": utp(5),
-            f"{prefix}-3-slide-utp-5-continue": ch.get("utp_5_continue", "") or "",
+            f"{prefix}-3-slide-utp-5-continue": utp_5_continue,
             f"{prefix}-4-slide-utp-6": utp(6),
             f"{prefix}-4-slide-utp-7": utp(7),
             f"{prefix}-4-slide-utp-8": utp(8),
@@ -501,7 +530,6 @@ class ProductCardGeneration:
         }
 
         images = state.result.get("generated_images") or []
-
         imgs = []
         for meta in images[:4]:
             imgs.append(
@@ -519,13 +547,11 @@ class ProductCardGeneration:
                 }
             )
 
-        payload = {
+        return {
             "job_id": job_id,
             "text": text_block,
             "generated_images": imgs,
         }
-
-        return payload
 
     def run_state(self, input_data: Dict) -> AgentState:
         init = AgentState(input_data=input_data)

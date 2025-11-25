@@ -6,6 +6,6 @@ PARAMETRS_LLM = {
 }
 
 
-QWEN_EDIT_PATH = "models/qwen_image_edit"
+QWEN_EDIT_PATH = "ovedrive/Qwen-Image-Edit-2509-4bit"
 QWEN_VL_PATH = "models/qwen_detect_product"
 RMBG_PATH = "models/briaai_rmbg"
