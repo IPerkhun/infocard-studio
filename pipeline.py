@@ -1,4 +1,6 @@
 import logging
+import time
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +36,6 @@ from prompts.prompt import (
     PROMPT_GENERATE_IMAGE_S_3,
     PROMPT_GENERATE_IMAGE_S_4,
     PROMPT_GENERATE_SPECS,
-    PROMPT_VALIDATE_IMAGE_QUALITY,
     PROMPT_VALIDATE_IMAGE_VL,
 )
 
@@ -46,7 +47,6 @@ from schemas.schema import (
     ImageGenOutput,
     OutputLLM,
     SpecsOutput,
-    ImageQualityOutput,
 )
 from tools.agent_tools import (
     detect_product_tool,
@@ -83,6 +83,50 @@ class ProductCardGeneration:
 
     def _so(self, schema: Type[BaseModel]):
         return self.llm.with_structured_output(schema=schema)
+
+    def _invoke_llm_with_retry(
+        self,
+        prompt: str,
+        schema: Type[BaseModel],
+        max_attempts: int = 3,
+        delay: float = 0.5,
+        log_prefix: str = "",
+    ) -> Optional[BaseModel]:
+        """
+        Вызывает LLM с structured_output, делает max_attempts попыток.
+        Если всё упало — возвращает None, НО не бросает исключение.
+        """
+        runnable = self._so(schema)
+        last_exc: Exception | None = None
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                logger.info(
+                    "%sLLM call attempt %d/%d",
+                    f"{log_prefix}: " if log_prefix else "",
+                    attempt,
+                    max_attempts,
+                )
+                return runnable.invoke(prompt)
+            except Exception as e:
+                last_exc = e
+                logger.exception(
+                    "%sLLM call failed on attempt %d/%d: %s",
+                    log_prefix,
+                    attempt,
+                    max_attempts,
+                    e,
+                )
+                if attempt < max_attempts:
+                    time.sleep(delay)
+
+        logger.error(
+            "%sLLM call failed after %d attempts: %s",
+            log_prefix,
+            max_attempts,
+            last_exc,
+        )
+        return None
 
     def _normalize_photos(self, state: AgentState) -> AgentState:
         try:
@@ -170,6 +214,8 @@ class ProductCardGeneration:
         vision_raw = detect_product_tool.invoke(
             {"image_url": image_url, "question": PROMPT_DETECT_OBJECT}
         )
+
+        logger.info("_detect_label_vision_raw=%s", vision_raw)
 
         prompt = PROMPT_DETECT_LMS.format(vision_raw=vision_raw)
 
@@ -286,12 +332,6 @@ class ProductCardGeneration:
 
         label_prompts = _LABEL_PROMPTS.get(label) or _LABEL_PROMPTS["M"]
 
-        logger.info(
-            "validate_images: start validation for %d images, label=%s",
-            n,
-            label,
-        )
-
         for idx in range(n):
             img_meta = generated[idx]
             img_b64 = img_meta.get("image_base64") or ""
@@ -307,30 +347,26 @@ class ProductCardGeneration:
                 {"image_base64": img_b64, "question": PROMPT_VALIDATE_IMAGE_VL.strip()}
             )
 
-            logger.debug(
-                "validate_images: position=%s raw_vl_text=%s",
+            logger.info(
+                "validate_images: position=%s raw_vl_text=%r",
                 pos,
                 raw_vl_text,
             )
 
-            prompt = PROMPT_VALIDATE_IMAGE_QUALITY.format(
-                product_name=product_name,
-                vision_raw=raw_vl_text,
-            )
+            status_str = str(raw_vl_text).strip().upper()
 
-            runnable = self._so(ImageQualityOutput)
-            quality: ImageQualityOutput = runnable.invoke(prompt)
+            if status_str == "OK":
+                logger.info(
+                    "validate_images: position=%s vision_status=OK -> keep image",
+                    pos,
+                )
+                continue
 
             logger.info(
-                "validate_images: position=%s status=%s reason=%s attempts=%d",
+                "validate_images: position=%s vision_status=%s -> regenerate",
                 pos,
-                quality.status,
-                quality.reason,
-                attempts.get(pos, 0),
+                status_str,
             )
-
-            if quality.status == "OK":
-                continue
 
             src_url = photos_with_url[idx]["image_url"]
 
@@ -338,6 +374,12 @@ class ProductCardGeneration:
             extra = state.result.get("augment_prompt") or ""
             prompt_text = (
                 f"{base_prompt.format(product_name=product_name)} {extra}".strip()
+            )
+
+            logger.info(
+                "validate_images: position=%s REGEN PROMPT:\n%s",
+                pos,
+                prompt_text,
             )
 
             try:
@@ -353,8 +395,26 @@ class ProductCardGeneration:
                         "image_base64": regen_out.generated_images[0] or "",
                     }
 
-            except Exception:
+                    logger.info(
+                        "validate_images: position=%s regenerated successfully (attempt=%d)",
+                        pos,
+                        attempts[pos],
+                    )
+                else:
+                    logger.info(
+                        "validate_images: position=%s regen returned empty image (attempt=%d)",
+                        pos,
+                        attempts[pos],
+                    )
+
+            except Exception as e:
                 attempts[pos] = attempts.get(pos, 0) + 1
+                logger.exception(
+                    "validate_images: position=%s regen failed on attempt=%d: %s",
+                    pos,
+                    attempts[pos],
+                    e,
+                )
                 continue
 
         state.result["generated_images"] = new_generated
@@ -375,32 +435,48 @@ class ProductCardGeneration:
             product_properties=product_properties,
         )
 
-        runnable = self._so(OutputLLM)
+        out: OutputLLM | None = self._invoke_llm_with_retry(
+            prompt,
+            OutputLLM,
+            max_attempts=3,
+            delay=0.5,
+            log_prefix="gen_characteristics_giga",
+        )
 
-        out: OutputLLM = runnable.invoke(prompt)
+        if out is None:
+            logger.error(
+                "gen_characteristics_giga: failed, leaving characteristics=None"
+            )
+            state.result["characteristics"] = None
+            return state
 
-        logger.info("УТП ЕБАНЫЕ: headers=%s", out)
-
+        logger.info("gen_characteristics_giga: УТП: %s", out)
         state.result["characteristics"] = out
-
         return state
 
     def _gen_headers(self, state: AgentState) -> AgentState:
         ch = state.result.get("characteristics")
-
         title = ch.title if ch else ""
 
         prompt = PROMPT_GENERATE_HEADERS.format(title=title)
 
-        runnable = self._so(HeadersOutput)
-        out: HeadersOutput = runnable.invoke(prompt)
+        out: HeadersOutput | None = self._invoke_llm_with_retry(
+            prompt,
+            HeadersOutput,
+            max_attempts=3,
+            delay=0.5,
+            log_prefix="gen_headers",
+        )
 
-        headers = (out.headers or [])[:1]
-        headers += [""] * (1 - len(headers))
+        if out is None:
+            headers: list[str] = [""]
+            logger.error("gen_headers: failed, using empty header")
+        else:
+            headers = (out.headers or [])[:1]
+            headers += [""] * (1 - len(headers))
+
         state.result["headers"] = headers
-
         logger.info("ХЕДЕРЫ: %s", headers)
-
         return state
 
     def _gen_specs(self, state: AgentState) -> AgentState:
@@ -409,18 +485,25 @@ class ProductCardGeneration:
             product_properties=state.input_data.get("product_properties") or "",
         )
 
-        runnable = self._so(SpecsOutput)
-        out: SpecsOutput = runnable.invoke(prompt)
+        out: SpecsOutput | None = self._invoke_llm_with_retry(
+            prompt,
+            SpecsOutput,
+            max_attempts=3,
+            delay=0.5,
+            log_prefix="gen_specs",
+        )
 
-        state.result["specs_text"] = out.text or ""
+        if out is None:
+            specs_text = ""
+            logger.error("gen_specs: failed, specs_text will be empty")
+        else:
+            specs_text = out.text or ""
+
+        state.result["specs_text"] = specs_text
 
         logger.info(
             "СПЕКИ=%r",
-            (
-                (state.result["specs_text"][:120] + "...")
-                if state.result["specs_text"]
-                else ""
-            ),
+            (specs_text[:120] + "...") if specs_text else "",
         )
 
         return state
@@ -429,9 +512,9 @@ class ProductCardGeneration:
         ch = state.result.get("characteristics")
         if ch is None:
             state.result["description_text"] = ""
+            logger.warning("gen_description: no characteristics, description empty")
             return state
 
-        # utp — список строк
         utp_lines = "\n".join(
             f"УТП {i}: {text}" for i, text in enumerate(ch.utp, start=1)
         )
@@ -443,9 +526,19 @@ class ProductCardGeneration:
             specs_text=state.result.get("specs_text", ""),
         )
 
-        runnable = self._so(DescriptionOutput)
-        out: DescriptionOutput = runnable.invoke(prompt)
-        desc_text = (out.text or "").strip()
+        out: DescriptionOutput | None = self._invoke_llm_with_retry(
+            prompt,
+            DescriptionOutput,
+            max_attempts=3,
+            delay=0.5,
+            log_prefix="gen_description",
+        )
+
+        if out is None:
+            desc_text = ""
+            logger.error("gen_description: failed, description_text will be empty")
+        else:
+            desc_text = (out.text or "").strip()
 
         state.result["description_text"] = desc_text
 

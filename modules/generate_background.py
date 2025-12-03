@@ -1,6 +1,6 @@
 import base64
 import io
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List
 
 import requests
 import torch
@@ -13,12 +13,25 @@ from models_init.loads_models import CustomEditQwenPipeline
 _TIMEOUT = 20
 
 
+def pad_to_size(
+    img: Image.Image, target_w: int = 900, target_h: int = 1200
+) -> Image.Image:
+    img = img.copy()
+    w, h = img.size
+    ratio = min(target_w / w, target_h / h)
+    new_w = int(w * ratio)
+    new_h = int(h * ratio)
+    img = img.resize((new_w, new_h), Image.LANCZOS)
+    background = Image.new("RGB", (target_w, target_h), (255, 255, 255))
+    offset = ((target_w - new_w) // 2, (target_h - new_h) // 2)
+    background.paste(img, offset)
+    return background
+
+
 class BackgroundGeneration:
     def __init__(self) -> None:
         self.cfg = ImageEditConfig()
-        self.pipe = CustomEditQwenPipeline()
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+        self.pipe = CustomEditQwenPipeline().pipeline
         self._session = requests.Session()
 
     def _fetch_image_rgb(self, url: str) -> Image.Image:
@@ -35,24 +48,6 @@ class BackgroundGeneration:
                 if url:
                     yield url
 
-    @staticmethod
-    def _round_to_multiple(x: int, m: int = 8) -> int:
-        return x - (x % m)
-
-    @staticmethod
-    def _letterbox(
-        img: Image.Image, target: Tuple[int, int], bg=(255, 255, 255)
-    ) -> Image.Image:
-        tw, th = target
-        canvas = Image.new("RGB", (tw, th), bg)
-        ratio = min(tw / img.width, th / img.height)
-        nw, nh = max(1, int(img.width * ratio)), max(1, int(img.height * ratio))
-        resized = img.resize((nw, nh), Image.LANCZOS)
-        x = (tw - nw) // 2
-        y = (th - nh) // 2
-        canvas.paste(resized, (x, y))
-        return canvas
-
     def generate_images(self, data: Dict, prompt: str) -> List[Image.Image]:
         product_name = data.get("product_name", "item")
         prompt = prompt.format(product_name=product_name)
@@ -64,31 +59,30 @@ class BackgroundGeneration:
 
         target_w, target_h = 900, 1200
 
+        negative_prompt = """No people, no faces, no hands, no text, no logos, no labels, no distortions, no reflections, 
+        no shadows on the product, no color changes to the product, no extra objects, no artifacts, no blur, no low quality, 
+        no watermarks, no decorations covering the product."""
+
+        num_steps = getattr(self.cfg, "num_inference_steps", 35)
+        true_cfg_scale = getattr(self.cfg, "true_cfg_scale", 4.0)
+        guidance_scale = getattr(self.cfg, "guidance_scale", 1.0)
+
         with torch.inference_mode():
             for url in urls:
                 try:
                     img = self._fetch_image_rgb(url)
+                    image = pad_to_size(img, target_w, target_h)
 
-                    canvas = self._letterbox(
-                        img, (target_w, target_h), bg=(255, 255, 255)
-                    )
+                    inputs = {
+                        "image": [image],
+                        "prompt": [prompt],
+                        "negative_prompt": [negative_prompt],
+                        "num_inference_steps": num_steps,
+                        "guidance_scale": guidance_scale,
+                        "true_cfg_scale": true_cfg_scale,
+                    }
 
-                    pw = self._round_to_multiple(canvas.width, 8)
-                    ph = self._round_to_multiple(canvas.height, 8)
-                    proc = (
-                        canvas
-                        if (canvas.width == pw and canvas.height == ph)
-                        else canvas.resize((pw, ph), Image.LANCZOS)
-                    )
-
-                    result = self.pipe.pipeline(
-                        image=proc,
-                        prompt=prompt,
-                        num_inference_steps=self.cfg.num_inference_steps,
-                        true_cfg_scale=self.cfg.true_cfg_scale,
-                        negative_prompt="no people, no faces, no text, no logo, no artifacts, no distortions, no blur, no low quality, no shape change of the product.",
-                    )
-
+                    result = self.pipe(**inputs)
                     out = result.images[0]
 
                     if out.size != (target_w, target_h):
@@ -100,9 +94,7 @@ class BackgroundGeneration:
 
         return out_images
 
-    def get_images(
-        self, data: Dict, prompt: str
-    ) -> Tuple[List[Image.Image], List[str]]:
+    def get_images(self, data: Dict, prompt: str):
         pil_images = self.generate_images(data, prompt)
         enc: List[str] = []
         for im in pil_images:

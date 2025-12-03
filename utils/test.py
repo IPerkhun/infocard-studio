@@ -11,7 +11,7 @@ OUTPUT = Path("products_results.json")
 with INPUT.open("r", encoding="utf-8") as f:
     data = json.load(f)
 
-products = data if isinstance(data, list) else [data][:3]
+products = data if isinstance(data, list) else [data][:1]
 
 pcg = ProductCardGeneration()
 results = []
@@ -28,9 +28,7 @@ for i, product in enumerate(products, 1):
 
 with OUTPUT.open("w", encoding="utf-8") as f:
     json.dump(results, f, ensure_ascii=False, indent=2)
-
-import base64
-
+#%%
 # %%
 import base64
 import json

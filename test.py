@@ -3,7 +3,7 @@ import torch
 from PIL import Image
 from diffusers import QwenImageEditPlusPipeline
 
-MODEL_ID = "ovedrive/Qwen-Image-Edit-2509-4bit"
+MODEL_ID = "models/qwen_image_edit"
 
 # -----------------------------
 # Функция: паддинг под нужный размер
@@ -39,7 +39,7 @@ pipe.to("cuda")
 import os
 
 OUTPUT_DIR = 'edits_images'
-INPUT_DIR = '/home/evgenii_bondarenko/infocard-studio/data/TEST_MODEL/new'
+INPUT_DIR = 'edits_image'
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -101,8 +101,8 @@ print(f"Сохранено в папку {OUTPUT_DIR}")
 '''Для 1 изображения'''
 import os
 
-OUTPUT_DIR = 'edits_images'
-INPUT_DIR = '/home/evgenii_bondarenko/infocard-studio/data/TEST_MODEL/new'
+OUTPUT_DIR = 'edits_image'
+INPUT_DIR = 'edits_image'
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -123,8 +123,7 @@ for filename in os.listdir(INPUT_DIR):
 # image = pad_to_size(image, 900, 1200)
 
     prompt = (
-    """Replace the background with a modern kitchen with a Christmas theme. Keep the product unchanged, preserving its original
-shape and details. Remove all existing background elements."""
+    """Replace the background with a festive cream-gold living room that still feels connected to a warm Christmas kitchen style: decorated tree, garlands, soft bokeh, and subtle kitchen elements in the background. Keep pot unchanged. No text. Bright lighting"""
     )
 
     negative_prompt = (

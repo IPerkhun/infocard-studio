@@ -7,9 +7,8 @@ load_dotenv()
 
 MODELS = {
     "qwen_llm": "Qwen/Qwen3-4B-Instruct-2507-FP8",           
-    "qwen_image_edit": "ovedrive/qwen-image-edit-4bit",      
+    "qwen_image_edit": "ovedrive/Qwen-Image-Edit-2509-4bit",      
     "qwen_detect_product": "Qwen/Qwen2.5-VL-7B-Instruct-AWQ",
-    "briaai_rmbg": "briaai/RMBG-2.0"
 }
 
 

@@ -8,15 +8,8 @@ load_dotenv()
 
 class LLMManager:
     def __init__(self):
-        self.credentials = os.environ.get("GIGACHAT_CREDENTIALS")
-        self.scope = os.environ.get("GIGACHAT_SCOPE", "GIGACHAT_API_PERS")
-        self.verify_ssl = (
-            os.environ.get("GIGACHAT_VERIFY_SSL", "false").lower() == "true"
-        )
-
-        self.temperature = float(os.environ.get("GIGACHAT_TEMPERATURE", "0.0"))
-        self.top_p = float(os.environ.get("GIGACHAT_TOP_P", "1.0"))
-        self.model = os.environ.get("GIGACHAT_MODEL")
+        self.credentials = os.environ.get("GIGACHAT_CLIENT_SECRET")
+        self.scope = os.environ.get("GIGACHAT_SCOPE")
 
         self.llm = self._init_llm()
 
@@ -24,9 +17,7 @@ class LLMManager:
         m = GigaChat(
             credentials=self.credentials,
             scope=self.scope,
-            verify_ssl_certs=self.verify_ssl,
-            temperature=self.temperature,
-            top_p=self.top_p,
-            model=self.model
+            verify_ssl_certs=False,
+            model="gigachat-max"
         )
         return m

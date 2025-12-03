@@ -17,61 +17,63 @@ PROMPT_DETECT_LMS = """
 - NONE: если на изображении коробка, человек или посуда не видна.
 
 Определи наиболее подходящий класс.
-Верни только нужное значение.
+Если на изображении есть новогоднее оформление, например елки, гирлянды, тоже описывай это обязательно
 """.strip()
 
 
 PROMPT_GENERATE_IMAGE_L_1 = """
-Replace the background with a cozy light-beige Christmas kitchen. Add garland bokeh and evergreen decor. Keep {product_name} unchanged. No text. Bright lighting.
+Replace the background with a cozy light-beige Christmas kitchen filled with festive decor, warm lights, and holiday atmosphere. Add garland bokeh and evergreen decor. Strong Christmas kitchen vibe required. Keep {product_name} unchanged. No text. Bright lighting.
 """
 
 PROMPT_GENERATE_IMAGE_L_2 = """
-Replace the background with a festive cream-gold living room with a decorated Christmas tree and garlands. Keep {product_name} unchanged. No text. Bright lighting.
+Replace the background with a festive cream-gold living room that still feels connected to a warm Christmas kitchen style: decorated tree, garlands, soft bokeh, and subtle kitchen elements in the background. Keep {product_name} unchanged. No text. Bright lighting.
 """
 
 PROMPT_GENERATE_IMAGE_L_3 = """
-Replace the background with a minimalist beige Christmas kitchen with golden bokeh and evergreen decor. Keep {product_name} unchanged. No text. Bright lighting.
+Replace the background with a minimalist beige Christmas kitchen enhanced with golden bokeh, evergreen decor, and warm holiday accents. Strong Christmas kitchen mood. Keep {product_name} unchanged. No text. Bright lighting.
 """
 
 PROMPT_GENERATE_IMAGE_L_4 = """
-Replace the background with a warm kitchen with green cabinets, wooden counters, and two blurred decorated Christmas trees. Add golden bokeh. Keep {product_name} unchanged. No text. Bright lighting.
+Replace the background with a warm Christmas kitchen featuring green cabinets, wooden counters, holiday garlands, and two blurred decorated Christmas trees. Add golden bokeh. Strong festive kitchen atmosphere. Keep {product_name} unchanged. No text. Bright lighting.
 """
 
+
 PROMPT_GENERATE_IMAGE_M_1 = """
-Replace the background with a top-down cozy Christmas wooden setup: green napkin, pine branch, cones. Keep {product_name} unchanged. No text. Bright lighting.
+Replace the background with a top-down cozy Christmas wooden kitchen setup: warm-toned wood, green napkin, pine branches, cones, and subtle kitchen elements. Strong festive vibe. Keep {product_name} unchanged. No text. Bright lighting.
 """
 
 PROMPT_GENERATE_IMAGE_M_2 = """
-Replace the background with a dark wooden fine-dining table with wine glasses, linen napkin, black utensils, and subtle Christmas bokeh. Keep {product_name} unchanged. No text. Bright lighting.
+Replace the background with a dark wooden fine-dining table styled like a Christmas kitchen setting: wine glasses, linen napkin, black utensils, subtle festive bokeh, and holiday accents. Keep {product_name} unchanged. No text. Bright lighting.
 """
 
 PROMPT_GENERATE_IMAGE_M_3 = """
-Replace the background with a minimalist white tablecloth flat-lay with rose-gold utensils and gentle Christmas decor. Keep {product_name} unchanged. No text. Bright lighting.
+Replace the background with a minimalist white tablecloth flat-lay that resembles a modern Christmas kitchen arrangement with rose-gold utensils and gentle holiday decor. Keep {product_name} unchanged. No text. Bright lighting.
 """
 
 PROMPT_GENERATE_IMAGE_M_4 = """
-Replace the background with a cozy living room with a fireplace, pine garland, a decorated Christmas tree, and warm bokeh. Keep {product_name} unchanged. No text. Bright lighting.
+Replace the background with a cozy living-room-meets-kitchen Christmas scene: fireplace, pine garland, decorated tree, warm bokeh, and soft kitchen elements blending in. Keep {product_name} unchanged. No text. Bright lighting.
 """
 
+
 PROMPT_GENERATE_IMAGE_S_1 = """
-Replace the background with a cozy Christmas kitchen: warm tones, garland bokeh, evergreen decor, red stocking. Keep {product_name} unchanged. No text. Bright lighting.
+Replace the background with a cozy Christmas kitchen: warm tones, strong holiday decorations, garland bokeh, evergreen decor, red stocking, and festive kitchen atmosphere. Keep {product_name} unchanged. No text. Bright lighting.
 """
 
 PROMPT_GENERATE_IMAGE_S_2 = """
-Replace the background with a hygge living room with candles, a coffee table, a fireplace with pine garland, and Christmas tree bokeh. Keep {product_name} unchanged. No text. Bright lighting.
+Replace the background with a hygge-style living room that blends into a Christmas kitchen vibe: candles, coffee table, fireplace with pine garland, soft tree bokeh, and subtle kitchen elements. Keep {product_name} unchanged. No text. Bright lighting.
 """
 
 PROMPT_GENERATE_IMAGE_S_3 = """
-Replace the background with a modern kitchen: matte black cabinets, white countertop, daylight, and golden Christmas bokeh. Keep {product_name} unchanged. No text. Bright lighting.
+Replace the background with a modern Christmas kitchen: matte black cabinets, white countertop, daylight lighting, golden holiday bokeh, and festive kitchen decor. Keep {product_name} unchanged. No text. Bright lighting.
 """
 
 PROMPT_GENERATE_IMAGE_S_4 = """
-Replace the background with a festive kitchen: green cabinets, cream countertop, pine garland, and a decorated Christmas tree with golden bokeh. Keep {product_name} unchanged. No text. Bright lighting.
+Replace the background with a festive Christmas kitchen: green cabinets, cream countertop, pine garland, decorated Christmas tree, warm golden bokeh, and strong seasonal kitchen mood. Keep {product_name} unchanged. No text. Bright lighting.
 """
 
 
 PROMPT_GENERATE_ADDITIONAL_ANGLES = """
-Replace the background with one of these Christmas-decorated kitchens: modern white cabinets, matte green cabinets, or matte burgundy cabinets. Strong holiday decorations required: garlands, warm lights, Christmas tree elements, evergreen branches. Show {product_name} from a random angle (side, top, or low). Do not alter the product. No text. Bright lighting.
+Replace the background with one of these Christmas-decorated kitchens: modern white cabinets, matte green cabinets, or matte burgundy cabinets. The setting must clearly be a holiday kitchen: strong garlands, warm lights, Christmas tree elements, evergreen branches, festive details. Show {product_name} from a random angle (side, top, or low). Do not alter the product. No text. Bright lighting.
 """
 
 
@@ -87,10 +89,11 @@ PROMPT_VALIDATE_IMAGE_VL = """
 
 Фото считается OK, если ВСЕ условия выполняются:
 1) Товар виден и его легко узнать.
-2) Товар не обрезан сильно и не искажён.
-3) Нет серьёзных артефактов: глитчи, разрывы, тянутости, дублированные части, “дырки”.
-4) Фон НЕ однотонный (не полностью белый, чёрный, серый или один цвет).
-5) Имеет новогоднее наполнение
+2) Имеет новогоднее наполнение
+3) Товар не обрезан сильно и не искажён.
+4) Нет серьёзных артефактов: глитчи, разрывы, тянутости, дублированные части, “дырки”.
+5) Фон НЕ однотонный (не полностью белый, чёрный, серый или один цвет).
+
 
 Фото считается BAD, если ХОТЯ БЫ одно:
 1) Товар отсутствует, слишком мал или неразличим.
