@@ -21,62 +21,114 @@ PROMPT_DETECT_LMS = """
 """.strip()
 
 
-# -*- coding: utf-8 -*-
-
 PROMPT_GENERATE_IMAGE_L_1 = """
-Заменить фон на уютную светло-бежевую рождественскую кухню с праздничным декором, тёплой иллюминацией и атмосферой праздника. Добавить боке из гирлянд и вечнозелёные украшения. Нужна ярко выраженная рождественская кухонная атмосфера. {product_name} оставить без изменений. ТЕКСТА НА ФОТО БЫТЬ НЕ ДОЛЖНО. Яркое освещение.
+Replace the background with a cozy light-beige Christmas kitchen with warm lighting, evergreen decor, and soft golden bokeh from string lights.
+The scene must clearly look like a festive kitchen.
+Do not modify the {product_name}: keep its original color, shape, texture, and any printed details.
+No text, no logos, no labels, no watermarks in the background.
+Use bright, even lighting with no harsh shadows.
 """
+
 
 PROMPT_GENERATE_IMAGE_L_2 = """
-Заменить фон на праздничную кремово-золотую гостиную, стилистически связанную с тёплой рождественской кухней: украшенная ёлка, гирлянды, мягкое боке, лёгкие кухонные элементы на заднем плане. {product_name} оставить без изменений. ТЕКСТА НА ФОТО БЫТЬ НЕ ДОЛЖНО. Яркое освещение.
+Replace the background with a cream-gold festive living room connected to a Christmas kitchen: Christmas tree, garlands, and soft golden bokeh.
+Do not change the {product_name}: preserve its color, shape, and all details.
+Do not add any text, logos, labels, or watermarks in the background.
+Use bright, soft lighting.
 """
+
 
 PROMPT_GENERATE_IMAGE_L_3 = """
-Заменить фон на минималистичную бежевую рождественскую кухню с золотистым боке, хвойным декором и тёплыми праздничными акцентами. Ярко выраженная рождественская атмосфера кухни. {product_name} оставить без изменений. ТЕКСТА НА ФОТО БЫТЬ НЕ ДОЛЖНО. Яркое освещение.
+Replace the background with a minimalist beige Christmas kitchen with golden bokeh, evergreen decor, and modern elements.
+Do not modify the {product_name}: keep its color, shape, texture, and printed elements unchanged.
+Do not add text, logos, or watermarks in the background.
+Use bright and even lighting.
 """
 
+
 PROMPT_GENERATE_IMAGE_L_4 = """
-Заменить фон на тёплую рождественскую кухню с зелёными шкафами, деревянными столешницами, праздничными гирляндами и двумя размытыми украшенными ёлками. Добавить золотое боке. Яркая праздничная атмосфера кухни. {product_name} оставить без изменений. ТЕКСТА НА ФОТО БЫТЬ НЕ ДОЛЖНО. Яркое освещение.
+Replace the background with a warm Christmas kitchen featuring green cabinets, a wooden countertop, and softly blurred decorated Christmas trees.
+Add soft golden festive bokeh.
+Do not alter the {product_name}.
+Do not generate any background text, logos, labels, or watermarks.
+Use bright warm lighting.
 """
 
 
 PROMPT_GENERATE_IMAGE_M_1 = """
-Заменить фон на вид сверху: уютная рождественская деревянная кухня — тёплое дерево, зелёная салфетка, хвоя, шишки и лёгкие кухонные элементы. Сильная праздничная атмосфера. {product_name} оставить без изменений. ТЕКСТА НА ФОТО БЫТЬ НЕ ДОЛЖНО. Яркое освещение.
+Replace the background with a top-down wooden Christmas kitchen surface: warm wood, pine branches, cones, and subtle festive elements.
+The atmosphere must clearly feel like a Christmas kitchen.
+Place the {product_name} in the center without modifying it.
+No text, no labels, no logos in the background.
+Use bright and soft lighting.
 """
+
 
 PROMPT_GENERATE_IMAGE_M_2 = """
-Заменить фон на тёмный деревянный сервированный стол в стиле рождественской кухни: бокалы вина, льняная салфетка, чёрные приборы, лёгкое праздничное боке и праздничные акценты. {product_name} оставить без изменений. ТЕКСТА НА ФОТО БЫТЬ НЕ ДОЛЖНО. Яркое освещение.
+Replace the background with a dark wooden Christmas-style table setting: wine glasses, linen napkin, black cutlery, soft festive bokeh.
+Do not modify the {product_name}: keep all details and colors unchanged.
+No background text, logos, or labels.
+Use slightly contrasty lighting without overexposure.
 """
+
 
 PROMPT_GENERATE_IMAGE_M_3 = """
-Заменить фон на минималистичную сервировку на белой скатерти, напоминающую современную рождественскую кухню: приборы в розово-золотом стиле, мягкий праздничный декор. {product_name} оставить без изменений. ТЕКСТА НА ФОТО БЫТЬ НЕ ДОЛЖНО. Яркое освещение.
+Replace the background with a minimalist Christmas table setting on a white tablecloth with rose-gold cutlery, soft festive decor, and gentle bokeh.
+Do not modify the {product_name}.
+Do not add any text, logos, or labels in the background.
+Use bright diffused lighting.
 """
 
+
 PROMPT_GENERATE_IMAGE_M_4 = """
-Заменить фон на уютную сцену «гостиная + кухня» в рождественском стиле: камин, хвойная гирлянда, украшенная ёлка, тёплое боке и мягко читаемые кухонные элементы. {product_name} оставить без изменений. ТЕКСТА НА ФОТО БЫТЬ НЕ ДОЛЖНО. Яркое освещение.
+Replace the background with a cozy Christmas living-room-plus-kitchen scene: fireplace, garland, Christmas tree, warm bokeh, soft kitchen elements.
+Do not modify the {product_name}.
+No background text, no logos, no watermarks.
+Use warm soft lighting.
 """
 
 
 PROMPT_GENERATE_IMAGE_S_1 = """
-Заменить фон на уютную рождественскую кухню: тёплые тона, яркий праздничный декор, боке от гирлянд, хвойные украшения, красный рождественский носок и выразительная праздничная атмосфера кухни. {product_name} оставить без изменений. ТЕКСТА НА ФОТО БЫТЬ НЕ ДОЛЖНО. Яркое освещение.
+Replace the background with a cozy Christmas kitchen with bright decor, evergreen elements, a red stocking, and warm golden bokeh.
+Do not modify the {product_name}; keep it as the main subject.
+Do not generate text or logos in the background.
+Use bright and even lighting.
 """
+
 
 PROMPT_GENERATE_IMAGE_S_2 = """
-Заменить фон на хюгге-гостиную, плавно переходящую в рождественскую кухню: свечи, кофейный столик, камин с хвойной гирляндой, мягкое боке от ёлки и лёгкие кухонные элементы. {product_name} оставить без изменений. ТЕКСТА НА ФОТО БЫТЬ НЕ ДОЛЖНО. Яркое освещение.
+Replace the background with a hygge-style living room transitioning into a Christmas kitchen: candles, coffee table, fireplace with garland, soft tree bokeh.
+Do not change the {product_name}.
+Do not add text, logos, or watermarks in the background.
+Use warm, soft lighting.
 """
+
 
 PROMPT_GENERATE_IMAGE_S_3 = """
-Заменить фон на современную рождественскую кухню: матовые чёрные шкафы, белая столешница, дневной свет, золотистое праздничное боке и рождественский декор. {product_name} оставить без изменений. ТЕКСТА НА ФОТО БЫТЬ НЕ ДОЛЖНО. Яркое освещение.
+Replace the background with a modern Christmas kitchen: matte black cabinets, white countertop, daylight, golden festive bokeh.
+Do not modify the {product_name}: keep its color, proportions, and texture unchanged.
+Do not add background text or logos.
+Use bright natural lighting.
 """
 
+
 PROMPT_GENERATE_IMAGE_S_4 = """
-Заменить фон на праздничную рождественскую кухню: зелёные шкафы, кремовая столешница, хвойная гирлянда, украшенная ёлка, тёплое золотое боке и выраженная праздничная атмосфера кухни. {product_name} оставить без изменений. ТЕКСТА НА ФОТО БЫТЬ НЕ ДОЛЖНО. Яркое освещение.
+Replace the background with a festive Christmas kitchen: green cabinets, cream countertop, pine garland, decorated tree, warm golden bokeh.
+Do not modify the {product_name}.
+Do not add text, logos, labels, or watermarks in the background.
+Use bright warm lighting.
 """
 
 
 PROMPT_GENERATE_ADDITIONAL_ANGLES = """
-Заменить фон на одну из рождественских кухонь: современные белые шкафы, матовые зелёные или матовые бордовые шкафы. Обстановка должна явно передавать атмосферу праздничной кухни: гирлянды, тёплый свет, элементы ёлки, хвойные ветви, праздничные детали. Показать {product_name} под случайным ракурсом (сбоку, сверху или снизу). Продукт не изменять. ТЕКСТА НА ФОТО БЫТЬ НЕ ДОЛЖНО. Яркое освещение.
+Create an additional variant with a new Christmas kitchen background: modern white cabinets, matte green cabinets, or matte burgundy cabinets.
+The atmosphere must clearly feel festive: garlands, pine branches, warm lights, Christmas elements.
+Show the {product_name} from a random angle (side, top, or slight low angle) without distorting its shape or proportions.
+Do not modify the {product_name}: keep its color, texture, and printed elements.
+Do not generate text, logos, labels, or watermarks in the background.
+Use bright and even lighting.
 """
+
 
 
 PROMPT_VALIDATE_IMAGE_VL = """
@@ -105,38 +157,6 @@ PROMPT_VALIDATE_IMAGE_VL = """
 5) На фото нет новогоднего оформления
 
 Ответ верни строго по схеме
-"""
-
-
-PROMPT_VALIDATE_IMAGE_QUALITY = """
-Ты оцениваешь техническую пригодность фото товара для карточки маркетплейса.
-
-Товар: "{product_name}"
-
-Описание изображения от vision-модели:
-{vision_raw}
-
-Реши, подходит ли это фото для карточки товара по ТЕХНИЧЕСКИМ критериям.
-
-Фото считается OK, если одновременно выполняются условия:
-1) Товар виден отчётливо и различим (можно понять, что это за предмет).
-2) Товар не сильно обрезан, не заменён другим объектом и не искажён.
-3) Нет явных артефактов генерации: глитчи, “дыры”, странные искажённые части, разорванная геометрия, явные ошибки фона.
-4) Фон может быть кухней, столом, интерьером — это НОРМАЛЬНО и ДОПУСТИМО.
-5) Имеет новогоднее наполнение
-
-Фото считается BAD, только если:
-1) Товар отсутствует или почти не виден,
-2) Товар сильно обрезан, распался, заменён или невозможно понять, что это он,
-3) Есть явные серьёзные артефакты генерации (поломанные части, сильно испорченный фон, “дырки”, ломанный объект),
-4) Фон полностью пустой, однотонный, полностью чёрный/очень тёмный или выглядит как явная ошибка генерации.
-5) На фото нет новогоднего оформления
-
-НЕ считай обычный кухонный интерьер, стол, посуду или декор ошибкой или отвлекающим фоном — это допустимо для карточки товара.
-
-Ответ верни строго в виде:
-status = "OK" или "BAD"
-reason = краткое объяснение одной строкой.
 """
 
 

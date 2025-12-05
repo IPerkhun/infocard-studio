@@ -340,7 +340,7 @@ class ProductCardGeneration:
             if not img_b64:
                 continue
 
-            if attempts.get(pos, 0) >= 3:
+            if attempts.get(pos, 0) >= 1:
                 continue
 
             raw_vl_text = inspect_generated_image_tool.invoke(
@@ -348,9 +348,7 @@ class ProductCardGeneration:
             )
 
             logger.info(
-                "validate_images: position=%s raw_vl_text=%r",
-                pos,
-                raw_vl_text,
+                "описание картинки=%s", raw_vl_text,
             )
 
             status_str = str(raw_vl_text).strip().upper()

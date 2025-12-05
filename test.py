@@ -101,7 +101,7 @@ print(f"Сохранено в папку {OUTPUT_DIR}")
 '''Для 1 изображения'''
 import os
 
-OUTPUT_DIR = 'edits_image'
+OUTPUT_DIR = 'edits_images'
 INPUT_DIR = 'edits_image'
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -138,7 +138,6 @@ for filename in os.listdir(INPUT_DIR):
         "prompt": [prompt],                  
         "negative_prompt": [negative_prompt],
         "num_inference_steps": 35,
-        "guidance_scale": 1.0,
         "true_cfg_scale": 4.0,
     }
 

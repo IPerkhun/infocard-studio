@@ -30,4 +30,5 @@ dependencies = [
     "torchvision>=0.24.1",
     "transformers==4.56.2",
     "uvicorn>=0.38.0",
+    "xformers>=0.0.33.post2",
 ]

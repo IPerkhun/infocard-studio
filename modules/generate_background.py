@@ -1,6 +1,6 @@
 import base64
 import io
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Optional
 
 import requests
 import torch
@@ -34,6 +34,14 @@ class BackgroundGeneration:
         self.pipe = CustomEditQwenPipeline().pipeline
         self._session = requests.Session()
 
+        self._negative_prompt: str = (
+            "no people, no faces, no hands, no extra objects, "
+            "no text, no captions, no watermarks, no signatures, "
+            "no distortions, no artifacts, no double image, no duplicate items, "
+            "no blur, no noise, no low quality, "
+            "no color shifts, no unrealistic lighting"
+        )
+
     def _fetch_image_rgb(self, url: str) -> Image.Image:
         r = self._session.get(url, timeout=_TIMEOUT)
         r.raise_for_status()
@@ -48,6 +56,13 @@ class BackgroundGeneration:
                 if url:
                     yield url
 
+    def _get_generator(self) -> Optional[torch.Generator]:
+        seed = getattr(self.cfg, "seed", -1)
+        if seed is None or seed < 0:
+            return None
+        device = str(self.pipe.device) if hasattr(self.pipe, "device") else "cpu"
+        return torch.Generator(device=device).manual_seed(seed)
+
     def generate_images(self, data: Dict, prompt: str) -> List[Image.Image]:
         product_name = data.get("product_name", "item")
         prompt = prompt.format(product_name=product_name)
@@ -59,13 +74,11 @@ class BackgroundGeneration:
 
         target_w, target_h = 900, 1200
 
-        negative_prompt = """No people, no faces, no hands, no text, no logos, no labels, no distortions, no reflections, 
-        no shadows on the product, no color changes to the product, no extra objects, no artifacts, no blur, no low quality, 
-        no watermarks, no decorations covering the product."""
+        negative_prompt: str = self._negative_prompt
 
-        num_steps = getattr(self.cfg, "num_inference_steps", 35)
+        num_steps = getattr(self.cfg, "num_inference_steps", 40)
         true_cfg_scale = getattr(self.cfg, "true_cfg_scale", 4.0)
-        guidance_scale = getattr(self.cfg, "guidance_scale", 1.0)
+        generator = self._get_generator()
 
         with torch.inference_mode():
             for url in urls:
@@ -74,13 +87,17 @@ class BackgroundGeneration:
                     image = pad_to_size(img, target_w, target_h)
 
                     inputs = {
-                        "image": [image],
-                        "prompt": [prompt],
-                        "negative_prompt": [negative_prompt],
+                        "image": image, 
+                        "prompt": prompt,
+                        "negative_prompt": negative_prompt,
                         "num_inference_steps": num_steps,
-                        "guidance_scale": guidance_scale,
                         "true_cfg_scale": true_cfg_scale,
+                        # "height": target_h,
+                        # "width": target_w,
                     }
+
+                    if generator is not None:
+                        inputs["generator"] = generator
 
                     result = self.pipe(**inputs)
                     out = result.images[0]
@@ -89,6 +106,7 @@ class BackgroundGeneration:
                         out = out.resize((target_w, target_h), Image.LANCZOS)
 
                     out_images.append(out)
+
                 except Exception:
                     continue
 
@@ -102,3 +120,4 @@ class BackgroundGeneration:
             im.save(buf, format="PNG")
             enc.append(base64.b64encode(buf.getvalue()).decode("utf-8"))
         return pil_images, enc
+
