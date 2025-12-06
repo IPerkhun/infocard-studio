@@ -167,11 +167,13 @@ def get_all_results():
         out.append(
             {
                 "job_id": jid,
+                "label": res.get("label"), 
                 "text": res.get("text", {}),
                 "generated_images": res.get("generated_images", []),
             }
         )
     return out
+
 
 
 if __name__ == "__main__":

@@ -38,6 +38,7 @@ class UTPItem(BaseModel):
 
 class OutputLLM(BaseModel):
     """Генерация текста для заполнения карточек товара"""
+
     title: str
     subtitle: str
     utp: List[str] = Field(min_length=8, max_length=8)
@@ -54,6 +55,7 @@ class SpecsOutput(BaseModel):
 
 class DescriptionOutput(BaseModel):
     """Сгенерированный текст карточки товара"""
+
     text: str
 
 
@@ -64,6 +66,7 @@ class ProductPhoto(BaseModel):
 
 class ImageQualityOutput(BaseModel):
     """Проверка качества изображения"""
+
     status: Literal["OK", "BAD"]
     reason: str
 
@@ -84,6 +87,9 @@ class ImageGenInput(BaseModel):
 
 class ProductCardResponse(BaseModel):
     job_id: str = Field(..., description="Идентификатор задачи")
+    label: str = Field(
+        ..., description="Детектированная метка из _detect_label"
+    )  
     text: Dict[str, Any] = Field(..., description="Текстовый блок карточки ...")
     generated_images: List[Dict[str, Any]] = Field(
         ...,

@@ -9,6 +9,7 @@ MODELS = {
     "qwen_llm": "Qwen/Qwen3-4B-Instruct-2507-FP8",           
     "qwen_image_edit": "ovedrive/Qwen-Image-Edit-2509-4bit",      
     "qwen_detect_product": "Qwen/Qwen2.5-VL-7B-Instruct-AWQ",
+    "ultra": "Qwen/Qwen-Image-Edit"
 }
 
 

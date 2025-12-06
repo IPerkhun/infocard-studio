@@ -11,7 +11,7 @@ OUTPUT = Path("products_results.json")
 with INPUT.open("r", encoding="utf-8") as f:
     data = json.load(f)
 
-products = data if isinstance(data, list) else [data][:1]
+products = data if isinstance(data, list) else [data]
 
 pcg = ProductCardGeneration()
 results = []

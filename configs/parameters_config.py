@@ -4,9 +4,9 @@ from typing import Optional
 
 @dataclass
 class ImageEditConfig:
-    num_inference_steps: int = 15
+    num_inference_steps: int = 50
 
-    true_cfg_scale: float = 4.0
+    true_cfg_scale: float = 6.5
 
     seed: Optional[int] = -1
 

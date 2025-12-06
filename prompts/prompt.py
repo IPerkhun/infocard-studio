@@ -22,141 +22,130 @@ PROMPT_DETECT_LMS = """
 
 
 PROMPT_GENERATE_IMAGE_L_1 = """
-Replace the background with a cozy light-beige Christmas kitchen with warm lighting, evergreen decor, and soft golden bokeh from string lights.
-The scene must clearly look like a festive kitchen.
-Do not modify the {product_name}: keep its original color, shape, texture, and any printed details.
-No text, no logos, no labels, no watermarks in the background.
-Use bright, even lighting with no harsh shadows.
-"""
+Use the exact same object from the original photo.
+Do not change its shape, size, handle, material, color, or proportions.
+Remove all text.
 
+Place the unchanged object in a bright, festive Christmas kitchen environment.
+Keep the camera angle identical to the angle in the original photo.
+"""
 
 PROMPT_GENERATE_IMAGE_L_2 = """
-Replace the background with a cream-gold festive living room connected to a Christmas kitchen: Christmas tree, garlands, and soft golden bokeh.
-Do not change the {product_name}: preserve its color, shape, and all details.
-Do not add any text, logos, labels, or watermarks in the background.
-Use bright, soft lighting.
-"""
+Use the exact same object from the original photo.
+Do not change its shape, size, handle, material, color, or proportions.
+Remove all text.
 
+Place the unchanged object in a bright, festive Christmas kitchen environment.
+Show the object from a slightly different camera angle.
+"""
 
 PROMPT_GENERATE_IMAGE_L_3 = """
-Replace the background with a minimalist beige Christmas kitchen with golden bokeh, evergreen decor, and modern elements.
-Do not modify the {product_name}: keep its color, shape, texture, and printed elements unchanged.
-Do not add text, logos, or watermarks in the background.
-Use bright and even lighting.
+Use the exact same object from the original photo.
+Do not change its shape, size, handle, material, color, or proportions.
+Remove all text.
+
+Place the unchanged object in a bright, festive Christmas kitchen environment.
+Show the object from a noticeably different camera angle.
 """
 
-
 PROMPT_GENERATE_IMAGE_L_4 = """
-Replace the background with a warm Christmas kitchen featuring green cabinets, a wooden countertop, and softly blurred decorated Christmas trees.
-Add soft golden festive bokeh.
-Do not alter the {product_name}.
-Do not generate any background text, logos, labels, or watermarks.
-Use bright warm lighting.
+Use the exact same object from the original photo.
+Do not change its shape, size, handle, material, color, or proportions.
+Remove all text.
+
+Place the unchanged object in a bright, festive Christmas kitchen environment.
+Show the object from a different perspective (slightly higher or lower viewpoint).
 """
 
 
 PROMPT_GENERATE_IMAGE_M_1 = """
-Replace the background with a top-down wooden Christmas kitchen surface: warm wood, pine branches, cones, and subtle festive elements.
-The atmosphere must clearly feel like a Christmas kitchen.
-Place the {product_name} in the center without modifying it.
-No text, no labels, no logos in the background.
-Use bright and soft lighting.
-"""
+Use the exact same object from the original photo.
+Do not change its shape, size, handle, material, color, or proportions.
+Remove all text.
 
+Place the unchanged object in a bright, festive Christmas kitchen environment.
+Keep the camera angle identical to the angle in the original photo.
+"""
 
 PROMPT_GENERATE_IMAGE_M_2 = """
-Replace the background with a dark wooden Christmas-style table setting: wine glasses, linen napkin, black cutlery, soft festive bokeh.
-Do not modify the {product_name}: keep all details and colors unchanged.
-No background text, logos, or labels.
-Use slightly contrasty lighting without overexposure.
-"""
+Use the exact same object from the original photo.
+Do not change its shape, size, handle, material, color, or proportions.
+Remove all text.
 
+Place the unchanged object in a bright, festive Christmas kitchen environment.
+Show the object from a slightly different camera angle.
+"""
 
 PROMPT_GENERATE_IMAGE_M_3 = """
-Replace the background with a minimalist Christmas table setting on a white tablecloth with rose-gold cutlery, soft festive decor, and gentle bokeh.
-Do not modify the {product_name}.
-Do not add any text, logos, or labels in the background.
-Use bright diffused lighting.
+Use the exact same object from the original photo.
+Do not change its shape, size, handle, material, color, or proportions.
+Remove all text.
+
+Place the unchanged object in a bright, festive Christmas kitchen environment.
+Show the object from a noticeably different camera angle.
 """
 
-
 PROMPT_GENERATE_IMAGE_M_4 = """
-Replace the background with a cozy Christmas living-room-plus-kitchen scene: fireplace, garland, Christmas tree, warm bokeh, soft kitchen elements.
-Do not modify the {product_name}.
-No background text, no logos, no watermarks.
-Use warm soft lighting.
+Use the exact same object from the original photo.
+Do not change its shape, size, handle, material, color, or proportions.
+Remove all text.
+
+Place the unchanged object in a bright, festive Christmas kitchen environment.
+Show the object from a different perspective (slightly higher or lower viewpoint).
 """
 
 
 PROMPT_GENERATE_IMAGE_S_1 = """
-Replace the background with a cozy Christmas kitchen with bright decor, evergreen elements, a red stocking, and warm golden bokeh.
-Do not modify the {product_name}; keep it as the main subject.
-Do not generate text or logos in the background.
-Use bright and even lighting.
-"""
+Use the exact same object from the original photo.
+Do not change its shape, size, handle, material, color, or proportions.
+Remove all text.
 
+Place the unchanged object in a bright, festive Christmas kitchen environment.
+Keep the camera angle identical to the angle in the original photo.
+"""
 
 PROMPT_GENERATE_IMAGE_S_2 = """
-Replace the background with a hygge-style living room transitioning into a Christmas kitchen: candles, coffee table, fireplace with garland, soft tree bokeh.
-Do not change the {product_name}.
-Do not add text, logos, or watermarks in the background.
-Use warm, soft lighting.
-"""
+Use the exact same object from the original photo.
+Do not change its shape, size, handle, material, color, or proportions.
+Remove all text.
 
+Place the unchanged object in a bright, festive Christmas kitchen environment.
+Show the object from a slightly different camera angle.
+"""
 
 PROMPT_GENERATE_IMAGE_S_3 = """
-Replace the background with a modern Christmas kitchen: matte black cabinets, white countertop, daylight, golden festive bokeh.
-Do not modify the {product_name}: keep its color, proportions, and texture unchanged.
-Do not add background text or logos.
-Use bright natural lighting.
+Use the exact same object from the original photo.
+Do not change its shape, size, handle, material, color, or proportions.
+Remove all text.
+
+Place the unchanged object in a bright, festive Christmas kitchen environment.
+Show the object from a noticeably different camera angle.
 """
 
-
 PROMPT_GENERATE_IMAGE_S_4 = """
-Replace the background with a festive Christmas kitchen: green cabinets, cream countertop, pine garland, decorated tree, warm golden bokeh.
-Do not modify the {product_name}.
-Do not add text, logos, labels, or watermarks in the background.
-Use bright warm lighting.
+Use the exact same object from the original photo.
+Do not change its shape, size, handle, material, color, or proportions.
+Remove all text.
+
+Place the unchanged object in a bright, festive Christmas kitchen environment.
+Show the object from a different perspective (slightly higher or lower viewpoint).
 """
 
 
 PROMPT_GENERATE_ADDITIONAL_ANGLES = """
-Create an additional variant with a new Christmas kitchen background: modern white cabinets, matte green cabinets, or matte burgundy cabinets.
-The atmosphere must clearly feel festive: garlands, pine branches, warm lights, Christmas elements.
-Show the {product_name} from a random angle (side, top, or slight low angle) without distorting its shape or proportions.
-Do not modify the {product_name}: keep its color, texture, and printed elements.
-Do not generate text, logos, labels, or watermarks in the background.
-Use bright and even lighting.
+Use the exact same object from the original photo.
+Do not change its shape, size, handle, material, color, or proportions.
+Remove all text.
+
+Place the unchanged object in a bright, festive Christmas kitchen environment.
+Show the object from a different angle or perspective.
 """
 
 
-
 PROMPT_VALIDATE_IMAGE_VL = """
-Ты оцениваешь техническое качество изображения товара для карточки маркетплейса в новогоднем стиле.
-
-Товар: "{product_name}"
-
-Ниже — описание изображения от vision-модели:
-{vision_raw}
-
-Оцени фотографию только по техническим критериям, а не по эстетике.
-
-Фото считается OK, если ВСЕ условия выполняются:
-1) Товар виден и его легко узнать.
-2) Имеет новогоднее наполнение
-3) Товар не обрезан сильно и не искажён.
-4) Нет серьёзных артефактов: глитчи, разрывы, тянутости, дублированные части, “дырки”.
-5) Фон НЕ однотонный (не полностью белый, чёрный, серый или один цвет).
-
-
-Фото считается BAD, если ХОТЯ БЫ одно:
-1) Товар отсутствует, слишком мал или неразличим.
-2) Товар сильно обрезан или выглядит сломанным/искажённым.
-3) Есть серьёзные искажения генерации.
-4) Фон полностью однотонный или полностью чёрный/очень тёмный.
-5) На фото нет новогоднего оформления
-
-Ответ верни строго по схеме
+Return OK if the photo has any Christmas decoration and no strong AI glitches.
+Return BAD only if there are major artifacts or no Christmas theme at all.
+Return only OK or BAD.
 """
 
 

@@ -11,6 +11,8 @@ class CustomEditQwenPipeline:
             QWEN_EDIT_PATH,
             torch_dtype=torch.bfloat16,
         )
+        self.pipeline.to("cuda")
+        self.pipeline.set_progress_bar_config(disable=None)
 
 
 class QwenVLModel:

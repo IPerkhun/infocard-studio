@@ -39,6 +39,11 @@ from prompts.prompt import (
     PROMPT_VALIDATE_IMAGE_VL,
 )
 
+import base64
+import io
+import numpy as np
+from PIL import Image
+
 from schemas.schema import (
     AgentState,
     DescriptionOutput,
@@ -74,6 +79,92 @@ _LABEL_PROMPTS = {
         4: PROMPT_GENERATE_IMAGE_S_4,
     },
 }
+
+
+def has_large_black_area(
+    image_base64: str,
+    dark_threshold: int = 25,  # что считаем "чёрным"
+    min_ratio: float = 0.40,  # 40% тёмных пикселей = плохо
+    resize_to=(256, 256),  # ускоряет вычисление
+) -> bool:
+    try:
+        img_bytes = base64.b64decode(image_base64)
+        img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+        img = img.resize(resize_to, Image.BILINEAR)
+
+        arr = np.asarray(img, dtype=np.uint8)
+        gray = arr.mean(axis=2)
+
+        dark_ratio = (gray < dark_threshold).mean()
+        return dark_ratio >= min_ratio
+    except Exception:
+        return False
+
+
+import base64
+import io
+import numpy as np
+from PIL import Image
+
+
+def has_solid_or_dark_background(
+    image_base64: str,
+    dark_threshold: int = 30,  # что считаем тёмным
+    min_dark_ratio: float = 0.4,  # доля тёмных пикселей
+    std_threshold: float = 8.0,  # насколько “однородный” фон (чем меньше, тем ровнее)
+    border_ratio: float = 0.12,  # толщина рамки (12% от ширины/высоты)
+    resize_to=(256, 256),
+) -> bool:
+    """
+    True, если фон почти однотонный (темный или просто ровный цвет).
+    Ловит чёрные, тёмно-коричневые, белые, серые и т.п. полотна.
+    """
+    try:
+        img_bytes = base64.b64decode(image_base64)
+        img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+        img = img.resize(resize_to, Image.BILINEAR)
+
+        arr = np.asarray(img, dtype=np.uint8)
+
+        h, w, _ = arr.shape
+        bw = int(w * border_ratio)
+        bh = int(h * border_ratio)
+
+        # берём только рамку по периметру (фон)
+        top = arr[:bh, :, :]
+        bottom = arr[h - bh :, :, :]
+        left = arr[:, :bw, :]
+        right = arr[:, w - bw :, :]
+
+        border = np.concatenate(
+            [
+                top.reshape(-1, 3),
+                bottom.reshape(-1, 3),
+                left.reshape(-1, 3),
+                right.reshape(-1, 3),
+            ],
+            axis=0,
+        )
+
+        # яркость
+        gray = border.mean(axis=1)
+        dark_ratio = (gray < dark_threshold).mean()
+
+        # “ровность” цвета по рамке
+        std_per_channel = border.std(axis=0)
+        max_std = float(std_per_channel.max())
+
+        # фон считается плохим, если он либо очень тёмный,
+        # либо почти одного цвета (маленький разброс)
+        if dark_ratio >= min_dark_ratio:
+            return True
+
+        if max_std <= std_threshold:
+            return True
+
+        return False
+    except Exception:
+        return False
 
 
 class ProductCardGeneration:
@@ -340,32 +431,54 @@ class ProductCardGeneration:
             if not img_b64:
                 continue
 
-            if attempts.get(pos, 0) >= 1:
+            # лимит попыток регена
+            if attempts.get(pos, 0) >= 8:
                 continue
 
-            raw_vl_text = inspect_generated_image_tool.invoke(
-                {"image_base64": img_b64, "question": PROMPT_VALIDATE_IMAGE_VL.strip()}
-            )
+            need_regen = False
 
-            logger.info(
-                "описание картинки=%s", raw_vl_text,
-            )
-
-            status_str = str(raw_vl_text).strip().upper()
-
-            if status_str == "OK":
+            # 1) Жёсткая проверка на однотонный или тёмный фон
+            if has_solid_or_dark_background(img_b64):
                 logger.info(
-                    "validate_images: position=%s vision_status=OK -> keep image",
+                    "validate_images: position=%s has SOLID/DARK BACKGROUND -> force regenerate",
                     pos,
                 )
+                need_regen = True
+            else:
+                # 2) Проверка через Qwen-VL
+                raw_vl_text = inspect_generated_image_tool.invoke(
+                    {
+                        "image_base64": img_b64,
+                        "question": PROMPT_VALIDATE_IMAGE_VL.format(
+                            product_name=product_name
+                        ).strip(),
+                    }
+                )
+
+                logger.info("описание картинки=%s", raw_vl_text)
+
+                status_str = str(raw_vl_text).strip().upper()
+                first_token = status_str.split()[0] if status_str else ""
+
+                if first_token == "OK":
+                    logger.info(
+                        "validate_images: position=%s vision_status=OK -> keep image",
+                        pos,
+                    )
+                    need_regen = False
+                else:
+                    logger.info(
+                        "validate_images: position=%s vision_status=%s -> regenerate",
+                        pos,
+                        status_str,
+                    )
+                    need_regen = True
+
+            # если всё ок — оставляем картинку
+            if not need_regen:
                 continue
 
-            logger.info(
-                "validate_images: position=%s vision_status=%s -> regenerate",
-                pos,
-                status_str,
-            )
-
+            # --- Регенерация ---
             src_url = photos_with_url[idx]["image_url"]
 
             base_prompt = label_prompts.get(pos, label_prompts[1])
@@ -577,7 +690,7 @@ class ProductCardGeneration:
     def _build_payload(self, state: AgentState) -> dict:
         job_id = state.input_data.get("job_id")
 
-        raw_label = state.result.get("label")
+        raw_label = state.result.get("label") or "M"
         label = "M" if raw_label == "NONE" else raw_label
         prefix = label.lower()
 
@@ -640,6 +753,7 @@ class ProductCardGeneration:
 
         return {
             "job_id": job_id,
+            "label": raw_label,  # <-- добавили
             "text": text_block,
             "generated_images": imgs,
         }
